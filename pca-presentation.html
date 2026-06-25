@@ -1182,12 +1182,12 @@
                         PCA in <span class="accent">2026</span>
                     </h1>
                     <p class="reveal" style="font-size:32px;max-width:800px;margin:0 auto;">
-                        How PCA connects to modern Deep Learning and Federated Learning
+                        How PCA tames Transformer pipelines and powers privacy-preserving Federated Learning
                     </p>
                     <div class="reveal" style="margin-top:48px;display:flex;gap:40px;">
                         <div class="card card-accent" style="padding:28px 40px;text-align:center;">
-                            <p style="font-size:36px;margin-bottom:8px;">🧠</p>
-                            <p style="font-size:20px;color:var(--accent);">Autoencoders & VAE</p>
+                            <p style="font-size:36px;margin-bottom:8px;">🤖</p>
+                            <p style="font-size:20px;color:var(--accent);">PCA + Transformer</p>
                         </div>
                         <div class="card card-accent" style="padding:28px 40px;text-align:center;">
                             <p style="font-size:36px;margin-bottom:8px;">🔐</p>
@@ -1199,74 +1199,40 @@
             </section>
 
             <!-- ===================================================
-                 SLIDE 15: PCA → AUTOENCODERS
+                 SLIDE 15: PCA + TRANSFORMER — THE PROBLEM
                  =================================================== -->
             <section class="slide" id="slide-15">
                 <div class="glow-orb purple" style="width:350px;height:350px;top:-60px;right:-60px;"></div>
                 <div class="slide-content">
                     <div class="sota-badge reveal">🔥 SOTA Connection #1</div>
-                    <h2 class="reveal" style="margin-bottom:20px;">PCA is a Linear Autoencoder</h2>
+                    <h2 class="reveal" style="margin-bottom:20px;">PCA + Transformer — Taming Multicollinearity</h2>
                     <div class="two-col reveal" style="transition-delay:0.3s;">
                         <div class="col">
-                            <div class="img-container" style="margin-bottom:20px;background:var(--bg-card);padding:16px;">
-                                <!-- Animated Autoencoder Diagram -->
-                                <div style="display:flex;flex-direction:column;gap:16px;">
-                                    <div style="text-align:center;">
-                                        <span class="mono" style="font-size:14px;color:var(--accent);">PCA (Linear)</span>
-                                    </div>
-                                    <div class="ae-diagram" style="height:80px;">
-                                        <div class="ae-layer"><div class="ae-node input"></div><div class="ae-node input"></div><div class="ae-node input"></div><div class="ae-node input"></div><div class="ae-node input"></div></div>
-                                        <div class="ae-connector"></div>
-                                        <div class="ae-layer"><div class="ae-node latent"></div><div class="ae-node latent"></div></div>
-                                        <div class="ae-connector"></div>
-                                        <div class="ae-layer"><div class="ae-node input"></div><div class="ae-node input"></div><div class="ae-node input"></div><div class="ae-node input"></div><div class="ae-node input"></div></div>
-                                    </div>
-                                    <div style="display:flex;justify-content:space-between;padding:0 20px;">
-                                        <span class="ae-label">U_K^T · x</span>
-                                        <span class="ae-label" style="color:var(--accent);">z ∈ R^K</span>
-                                        <span class="ae-label">U_K · z</span>
-                                    </div>
-                                    <div style="border-top:1px solid rgba(0,255,204,0.1);padding-top:12px;text-align:center;">
-                                        <span class="mono" style="font-size:14px;color:var(--accent2);">Autoencoder (Non-Linear)</span>
-                                    </div>
-                                    <div class="ae-diagram" style="height:100px;">
-                                        <div class="ae-layer"><div class="ae-node input"></div><div class="ae-node input"></div><div class="ae-node input"></div><div class="ae-node input"></div><div class="ae-node input"></div></div>
-                                        <div class="ae-connector"></div>
-                                        <div class="ae-layer"><div class="ae-node hidden"></div><div class="ae-node hidden"></div><div class="ae-node hidden"></div><div class="ae-node hidden"></div></div>
-                                        <div class="ae-connector"></div>
-                                        <div class="ae-layer"><div class="ae-node hidden"></div><div class="ae-node hidden"></div><div class="ae-node hidden"></div></div>
-                                        <div class="ae-connector"></div>
-                                        <div class="ae-layer"><div class="ae-node latent"></div><div class="ae-node latent"></div></div>
-                                        <div class="ae-connector"></div>
-                                        <div class="ae-layer"><div class="ae-node hidden"></div><div class="ae-node hidden"></div><div class="ae-node hidden"></div></div>
-                                        <div class="ae-connector"></div>
-                                        <div class="ae-layer"><div class="ae-node hidden"></div><div class="ae-node hidden"></div><div class="ae-node hidden"></div><div class="ae-node hidden"></div></div>
-                                        <div class="ae-connector"></div>
-                                        <div class="ae-layer"><div class="ae-node output"></div><div class="ae-node output"></div><div class="ae-node output"></div><div class="ae-node output"></div><div class="ae-node output"></div></div>
-                                    </div>
-                                    <div style="display:flex;justify-content:space-between;padding:0 10px;">
-                                        <span class="ae-label">f(x)</span>
-                                        <span class="ae-label" style="color:var(--accent);">bottleneck</span>
-                                        <span class="ae-label">g(z)</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col">
                             <p style="font-size:24px;margin-bottom:16px;color:var(--text-primary);">
-                                A linear autoencoder with MSE loss <span class="accent">learns exactly the PCA solution</span>.
+                                Multivariate time series — <span class="accent">revenue forecasting, e-commerce ops, OHLCV stock data</span> — are full of <span class="accent2">correlated, redundant features</span>.
                             </p>
-                            <table class="compare-table">
-                                <tr><th>PCA</th><th>Autoencoder</th></tr>
-                                <tr><td>Encoder: $\mathbf{U}_K^T\mathbf{x}$</td><td>Encoder: $f(\mathbf{x})$</td></tr>
-                                <tr><td>Decoder: $\mathbf{U}_K\mathbf{z}$</td><td>Decoder: $g(\mathbf{z})$</td></tr>
-                                <tr><td>Linear only</td><td>Non-linear mappings</td></tr>
-                                <tr><td>Closed-form</td><td>Gradient descent</td></tr>
-                            </table>
-                            <div class="card card-accent" style="margin-top:16px;padding:16px;">
-                                <p style="font-size:18px;color:var(--text-primary);">
-                                    💡 <strong>Key insight:</strong> PCA = the "baby version" of autoencoders. Add non-linear layers → learn richer representations.
-                                </p>
+                            <ul class="bullet-list">
+                                <li>📈 <strong>Multicollinearity</strong> — open/high/low/close move together; revenue channels overlap</li>
+                                <li>🐌 <strong>Attention cost scales with variates</strong> — iTransformer attends across variate tokens, so more redundant variates means more wasted computation</li>
+                                <li>🧩 <strong>Black-box risk</strong> — feeding raw correlated features into a heavy Transformer makes it harder to reason about what drives the prediction</li>
+                            </ul>
+                        </div>
+                        <div class="col" style="display:flex;align-items:center;">
+                            <div class="card" style="padding:24px;border-color:rgba(255,0,170,0.25);">
+                                <h3 style="font-size:20px;margin-bottom:16px;color:var(--accent2);">⚠️ Without PCA</h3>
+                                <div class="workflow-step" style="min-width:100%;margin-bottom:12px;">
+                                    <div class="step-icon">📊</div>
+                                    <h4>Raw Correlated Features</h4>
+                                    <p>Open, High, Low, Close, Volume…</p>
+                                </div>
+                                <p style="text-align:center;color:var(--accent2);font-size:22px;margin:4px 0;">↓</p>
+                                <div class="workflow-step" style="min-width:100%;margin-bottom:12px;">
+                                    <div class="step-icon">🤖</div>
+                                    <h4>Transformer Attention</h4>
+                                    <p>Redundant signal, larger attention matrix</p>
+                                </div>
+                                <p style="text-align:center;color:var(--accent2);font-size:22px;margin:4px 0;">↓</p>
+                                <p style="text-align:center;font-size:18px;color:var(--text-dim);">Slower, noisier, harder to interpret</p>
                             </div>
                         </div>
                     </div>
@@ -1275,59 +1241,105 @@
             </section>
 
             <!-- ===================================================
-                 SLIDE 16: VAE — GENERATIVE PCA ON STEROIDS
+                 SLIDE 16: PCA + TRANSFORMER — THE PIPELINE
                  =================================================== -->
             <section class="slide" id="slide-16">
                 <div class="glow-orb magenta" style="width:400px;height:400px;bottom:-80px;left:200px;"></div>
                 <div class="slide-content">
-                    <div class="sota-badge reveal">🚀 Generative AI</div>
-                    <h2 class="reveal" style="margin-bottom:20px;">VAE — PCA's Cool Grandchild</h2>
-                    <div class="two-col reveal" style="transition-delay:0.3s;">
-                        <div class="col col-wide">
-                            <p style="font-size:24px;margin-bottom:20px;color:var(--text-primary);">
-                                <strong>Variational Autoencoders</strong> take the PCA idea further:
-                            </p>
-                            <ul class="bullet-list" style="margin-bottom:20px;">
-                                <li>PCA finds a <span class="accent">point</span> in latent space</li>
-                                <li>VAE learns a <span class="accent2">probability distribution</span> in latent space</li>
-                                <li>Sample from the distribution → <span class="accent3">generate new data</span>! 🎨</li>
-                            </ul>
-                            <div class="formula-box">
-                                <p style="font-size:20px;">
-                                    VAE Loss = <span class="accent">Reconstruction</span> + <span class="accent2">KL Divergence</span><br>
-                                    $$\mathcal{L} = \mathbb{E}[\log p(\mathbf{x}|\mathbf{z})] - D_{KL}(q(\mathbf{z}|\mathbf{x}) || p(\mathbf{z}))$$
-                                </p>
-                            </div>
-                            <div class="card" style="margin-top:16px;padding:16px;">
-                                <p style="font-size:18px;color:var(--text-primary);">
-                                    🧪 <strong>PCA → AE → VAE → Diffusion Models</strong><br>
-                                    <span style="font-size:16px;color:var(--text-dim);">The evolution from linear dim reduction to generating photorealistic images</span>
-                                </p>
-                            </div>
+                    <div class="topic-tag reveal">Pipeline</div>
+                    <h2 class="reveal" style="margin-bottom:32px;">PCA as a Pre-Processing Layer</h2>
+                    <div class="reveal" style="transition-delay:0.3s;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;">
+                        <div class="workflow-step" style="min-width:190px;">
+                            <div class="step-icon">📥</div>
+                            <h4>Raw Series</h4>
+                            <p>Multivariate input (OHLCV / revenue features)</p>
                         </div>
-                        <div class="col col-narrow">
-                            <div class="card card-accent" style="padding:24px;margin-bottom:16px;">
-                                <h3 style="font-size:22px;margin-bottom:12px;">The Lineage</h3>
-                                <div style="text-align:center;">
-                                    <p style="font-size:18px;padding:8px;background:rgba(0,255,204,0.1);border-radius:8px;margin-bottom:8px;">PCA (1901)</p>
-                                    <p style="color:var(--accent);margin-bottom:8px;">↓</p>
-                                    <p style="font-size:18px;padding:8px;background:rgba(123,97,255,0.1);border-radius:8px;margin-bottom:8px;">Autoencoder (1987)</p>
-                                    <p style="color:var(--accent3);margin-bottom:8px;">↓</p>
-                                    <p style="font-size:18px;padding:8px;background:rgba(255,0,170,0.1);border-radius:8px;margin-bottom:8px;">VAE (2013)</p>
-                                    <p style="color:var(--accent2);margin-bottom:8px;">↓</p>
-                                    <p style="font-size:18px;padding:8px;background:rgba(255,204,0,0.1);border-radius:8px;">Diffusion (2020)</p>
-                                </div>
-                            </div>
+                        <div style="display:flex;align-items:center;"><span class="arrow-right">→</span></div>
+                        <div class="workflow-step" style="min-width:190px;">
+                            <div class="step-icon">📏</div>
+                            <h4>Standardize</h4>
+                            <p>Z-score each feature</p>
                         </div>
+                        <div style="display:flex;align-items:center;"><span class="arrow-right">→</span></div>
+                        <div class="workflow-step" style="min-width:190px;">
+                            <div class="step-icon">🧮</div>
+                            <h4>PCA</h4>
+                            <p>Covariance → eigendecompose</p>
+                        </div>
+                        <div style="display:flex;align-items:center;"><span class="arrow-right">→</span></div>
+                        <div class="workflow-step" style="min-width:190px;">
+                            <div class="step-icon">✂️</div>
+                            <h4>Top-K Components</h4>
+                            <p>Orthogonal, compact, decorrelated</p>
+                        </div>
+                    </div>
+                    <div class="reveal" style="transition-delay:0.5s;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:16px;">
+                        <div class="workflow-step" style="min-width:190px;border-color:rgba(0,255,204,0.35);">
+                            <div class="step-icon">🤖</div>
+                            <h4>iTransformer / TranAD</h4>
+                            <p>Attention over fewer, independent variates</p>
+                        </div>
+                        <div style="display:flex;align-items:center;"><span class="arrow-right">→</span></div>
+                        <div class="workflow-step" style="min-width:190px;border-color:rgba(0,255,204,0.35);">
+                            <div class="step-icon">📊</div>
+                            <h4>Forecast / Anomaly Score</h4>
+                            <p>Revenue forecast or anomaly flag</p>
+                        </div>
+                    </div>
+                    <div class="card card-accent reveal" style="transition-delay:0.7s;margin-top:28px;padding:18px 24px;">
+                        <p style="font-size:19px;color:var(--text-primary);">
+                            💡 <strong>Why it helps:</strong> orthogonal inputs mean each variate token carries non-redundant information, so the attention block spends its capacity on genuinely independent signals instead of re-deriving correlations the data already had.
+                        </p>
                     </div>
                 </div>
                 <span class="slide-num">16 / 20</span>
             </section>
 
             <!-- ===================================================
-                 SLIDE 17: FEDERATED PCA
+                 SLIDE 17: PCA + TRANSFORMER — WHY THIS IS SOTA
                  =================================================== -->
             <section class="slide" id="slide-17">
+                <div class="glow-orb cyan" style="width:350px;height:350px;top:100px;left:-80px;"></div>
+                <div class="slide-content">
+                    <div class="topic-tag reveal">Why This Matters</div>
+                    <h2 class="reveal" style="margin-bottom:24px;">SOTA in Pipeline Integration, Not in Equations</h2>
+                    <div class="two-col reveal" style="transition-delay:0.3s;">
+                        <div class="col">
+                            <p style="font-size:22px;margin-bottom:16px;color:var(--text-primary);">
+                                The contribution isn't a new PCA formula — it's knowing <span class="accent">where a 125-year-old linear method still beats a 2024 attention block</span> at its own job: removing redundancy before the heavy model ever sees the data.
+                            </p>
+                            <div class="card" style="padding:16px;">
+                                <p style="font-size:18px;color:var(--text-primary);">
+                                    🧪 Classic preprocessing + modern architecture = an interpretable front-end bolted onto a powerful, non-linear back-end. Deep Learning stops being a pure black box.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col" style="display:flex;flex-direction:column;gap:14px;">
+                            <div class="card card-accent" style="padding:18px;">
+                                <p style="font-size:30px;margin-bottom:6px;">💰</p>
+                                <h3 style="font-size:20px;margin-bottom:6px;">Revenue Forecasting</h3>
+                                <p style="font-size:16px;">Decorrelate e-commerce demand drivers before iTransformer forecasts weekly/state-level revenue</p>
+                            </div>
+                            <div class="card card-accent" style="padding:18px;">
+                                <p style="font-size:30px;margin-bottom:6px;">📦</p>
+                                <h3 style="font-size:20px;margin-bottom:6px;">E-commerce Ops</h3>
+                                <p style="font-size:16px;">Compress overlapping operational signals (orders, logistics, traffic) into clean variate tokens</p>
+                            </div>
+                            <div class="card card-accent" style="padding:18px;">
+                                <p style="font-size:30px;margin-bottom:6px;">📉</p>
+                                <h3 style="font-size:20px;margin-bottom:6px;">OHLCV Anomaly Detection</h3>
+                                <p style="font-size:16px;">Orthogonalized price/volume features feed TranAD for cleaner anomaly scores</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <span class="slide-num">17 / 20</span>
+            </section>
+
+            <!-- ===================================================
+                 SLIDE 18: FEDERATED PCA — MECHANISM
+                 =================================================== -->
+            <section class="slide" id="slide-18">
                 <div class="glow-orb cyan" style="width:350px;height:350px;top:100px;left:-80px;"></div>
                 <div class="slide-content">
                     <div class="sota-badge reveal" style="border-color:rgba(0,255,204,0.3);color:var(--accent);">🔐 SOTA Connection #2</div>
@@ -1335,19 +1347,19 @@
                     <div class="two-col reveal" style="transition-delay:0.3s;">
                         <div class="col">
                             <p style="font-size:24px;margin-bottom:20px;color:var(--text-primary);">
-                                <span class="accent">The problem:</span> You need PCA across data from multiple hospitals/banks, but <span class="accent2">can't share raw data</span>.
+                                <span class="accent">The problem:</span> you need PCA across data from multiple hospitals/banks, but <span class="accent2">can't share raw data</span>.
                             </p>
                             <div class="card" style="padding:20px;margin-bottom:16px;">
                                 <h3 style="font-size:22px;margin-bottom:12px;">How Federated PCA Works</h3>
                                 <ol style="padding-left:20px;">
                                     <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Each node computes <strong>local covariance</strong> $\mathbf{S}_i$</li>
-                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Nodes send $\mathbf{S}_i$ (not raw data!) to server</li>
-                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Server aggregates: $\mathbf{S}_{global} = \sum w_i \mathbf{S}_i$</li>
-                                    <li style="font-size:20px;color:var(--accent);">Server does eigendecomposition → distributes eigenvectors</li>
+                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Nodes send $\mathbf{S}_i$ (not raw data!) to the server</li>
+                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Covariance is additive: $\mathbf{S}_{global} = \mathbf{S}_A + \mathbf{S}_B + \mathbf{S}_C$</li>
+                                    <li style="font-size:20px;color:var(--accent);">Server eigendecomposes $\mathbf{S}_{global}$ → distributes the eigenvectors</li>
                                 </ol>
                             </div>
                             <p style="font-size:18px;color:var(--text-dim);">
-                                Raw data never leaves the local node. Privacy guaranteed.
+                                Raw data never leaves the local node — only a compact, additive statistic does.
                             </p>
                         </div>
                         <div class="col" style="display:flex;align-items:center;">
@@ -1372,90 +1384,35 @@
                         </div>
                     </div>
                 </div>
-                <span class="slide-num">17 / 20</span>
-            </section>
-
-            <!-- ===================================================
-                 SLIDE 18: FEDERATED PCA — INDUSTRY USE CASES
-                 =================================================== -->
-            <section class="slide" id="slide-18">
-                <div class="glow-orb purple" style="width:300px;height:300px;bottom:-60px;right:300px;"></div>
-                <div class="slide-content">
-                    <div class="topic-tag reveal">Industry Impact</div>
-                    <h2 class="reveal" style="margin-bottom:28px;">Distributed PCA in the Wild</h2>
-                    <div class="reveal" style="transition-delay:0.3s;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;">
-                        <div class="card card-accent" style="padding:28px;">
-                            <p style="font-size:40px;margin-bottom:12px;">🏥</p>
-                            <h3 style="font-size:24px;margin-bottom:12px;">Healthcare</h3>
-                            <p style="font-size:18px;">
-                                Multi-hospital genomic studies. PCA on patient data without violating HIPAA. Enables cross-institution medical research.
-                            </p>
-                        </div>
-                        <div class="card card-accent" style="padding:28px;">
-                            <p style="font-size:40px;margin-bottom:12px;">🏦</p>
-                            <h3 style="font-size:24px;margin-bottom:12px;">Banking & Finance</h3>
-                            <p style="font-size:18px;">
-                                Cross-bank fraud detection. Dimensionality reduction on transaction data without exposing customer records. GDPR compliant.
-                            </p>
-                        </div>
-                        <div class="card card-accent" style="padding:28px;">
-                            <p style="font-size:40px;margin-bottom:12px;">📱</p>
-                            <h3 style="font-size:24px;margin-bottom:12px;">Edge Computing</h3>
-                            <p style="font-size:18px;">
-                                IoT devices with limited bandwidth. Compute local PCA on sensor data, share only statistics. Reduces communication cost 100×.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="reveal" style="transition-delay:0.5s;margin-top:24px;">
-                        <div class="card" style="padding:20px;display:flex;align-items:center;gap:24px;">
-                            <span style="font-size:28px;">🔑</span>
-                            <p style="font-size:22px;color:var(--text-primary);">
-                                <strong>Key trend:</strong> Privacy regulations (GDPR, HIPAA, CCPA) make federated approaches not just nice-to-have — they're <span class="accent">legally required</span> in many industries.
-                            </p>
-                        </div>
-                    </div>
-                </div>
                 <span class="slide-num">18 / 20</span>
             </section>
 
             <!-- ===================================================
-                 SLIDE 19: PCA LIMITATIONS & ALTERNATIVES
+                 SLIDE 19: FEDERATED PCA — WHY SOTA & USE CASES
                  =================================================== -->
             <section class="slide" id="slide-19">
-                <div class="glow-orb magenta" style="width:300px;height:300px;top:80px;right:-40px;"></div>
+                <div class="glow-orb purple" style="width:300px;height:300px;bottom:-60px;right:300px;"></div>
                 <div class="slide-content">
-                    <div class="topic-tag reveal">Heads Up</div>
-                    <h2 class="reveal" style="margin-bottom:24px;">When PCA Falls Short</h2>
-                    <div class="two-col reveal" style="transition-delay:0.3s;">
-                        <div class="col">
-                            <h3 style="font-size:26px;margin-bottom:16px;">Limitations</h3>
-                            <ul class="bullet-list">
-                                <li style="color:var(--text-primary);">❌ <strong>Linear only</strong> — can't capture curved manifolds</li>
-                                <li style="color:var(--text-primary);">❌ <strong>Variance ≠ Importance</strong> — high variance might be noise</li>
-                                <li style="color:var(--text-primary);">❌ <strong>Sensitive to scaling</strong> — always standardize first!</li>
-                                <li style="color:var(--text-primary);">❌ <strong>Assumes Gaussian-ish</strong> — struggles with multi-modal data</li>
-                            </ul>
+                    <div class="topic-tag reveal">Industry Impact</div>
+                    <h2 class="reveal" style="margin-bottom:20px;">From Local Tool to Distributed Protocol</h2>
+                    <p class="reveal" style="transition-delay:0.2s;font-size:20px;color:var(--text-secondary);margin-bottom:24px;">
+                        Additive covariance turns PCA into a <span class="accent">distributed learning protocol</span> — organizations collaborate without ever pooling raw data, which is exactly what GDPR, HIPAA, and CCPA require.
+                    </p>
+                    <div class="reveal" style="transition-delay:0.3s;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;">
+                        <div class="card card-accent" style="padding:24px;">
+                            <p style="font-size:36px;margin-bottom:10px;">🏥</p>
+                            <h3 style="font-size:22px;margin-bottom:10px;">Healthcare</h3>
+                            <p style="font-size:17px;">Multi-hospital genomic studies. PCA on patient data without violating HIPAA.</p>
                         </div>
-                        <div class="col">
-                            <h3 style="font-size:26px;margin-bottom:16px;">Alternatives</h3>
-                            <div style="display:flex;flex-direction:column;gap:12px;">
-                                <div class="card" style="padding:16px;display:flex;align-items:center;gap:16px;">
-                                    <span class="accent" style="font-size:18px;font-weight:700;min-width:120px;">Kernel PCA</span>
-                                    <p style="font-size:18px;">Non-linear via kernel trick</p>
-                                </div>
-                                <div class="card" style="padding:16px;display:flex;align-items:center;gap:16px;">
-                                    <span class="accent2" style="font-size:18px;font-weight:700;min-width:120px;">t-SNE</span>
-                                    <p style="font-size:18px;">Non-linear, great for visualization</p>
-                                </div>
-                                <div class="card" style="padding:16px;display:flex;align-items:center;gap:16px;">
-                                    <span class="accent3" style="font-size:18px;font-weight:700;min-width:120px;">UMAP</span>
-                                    <p style="font-size:18px;">Faster than t-SNE, preserves global structure</p>
-                                </div>
-                                <div class="card" style="padding:16px;display:flex;align-items:center;gap:16px;">
-                                    <span class="accent4" style="font-size:18px;font-weight:700;min-width:120px;">Autoencoders</span>
-                                    <p style="font-size:18px;">Non-linear, learnable, most flexible</p>
-                                </div>
-                            </div>
+                        <div class="card card-accent" style="padding:24px;">
+                            <p style="font-size:36px;margin-bottom:10px;">🏦</p>
+                            <h3 style="font-size:22px;margin-bottom:10px;">Banking & Finance</h3>
+                            <p style="font-size:17px;">Cross-bank fraud detection on transaction data without exposing customer records.</p>
+                        </div>
+                        <div class="card card-accent" style="padding:24px;">
+                            <p style="font-size:36px;margin-bottom:10px;">📱</p>
+                            <h3 style="font-size:22px;margin-bottom:10px;">Edge Computing</h3>
+                            <p style="font-size:17px;">IoT devices share only covariance statistics, not raw sensor streams — far less bandwidth.</p>
                         </div>
                     </div>
                 </div>
@@ -1485,19 +1442,19 @@
                             <p style="font-size:16px;">Linear, fast, well-understood, and still relevant 125 years later</p>
                         </div>
                         <div class="card card-accent" style="padding:28px;text-align:center;">
-                            <p style="font-size:36px;margin-bottom:12px;">🧠</p>
-                            <h3 style="font-size:20px;margin-bottom:8px;">Deep Learning</h3>
-                            <p style="font-size:16px;">PCA → AE → VAE → Generative AI. The DNA runs deep.</p>
+                            <p style="font-size:36px;margin-bottom:12px;">🤖</p>
+                            <h3 style="font-size:20px;margin-bottom:8px;">+ Transformer</h3>
+                            <p style="font-size:16px;">PCA decorrelates the input so iTransformer/TranAD attend to clean signal</p>
                         </div>
                         <div class="card card-accent" style="padding:28px;text-align:center;">
                             <p style="font-size:36px;margin-bottom:12px;">🔐</p>
                             <h3 style="font-size:20px;margin-bottom:8px;">Federated</h3>
-                            <p style="font-size:16px;">Privacy-first ML: PCA without sharing raw data</p>
+                            <p style="font-size:16px;">Additive covariance → privacy-first PCA without sharing raw data</p>
                         </div>
                     </div>
                     <div class="reveal" style="transition-delay:0.5s;margin-top:40px;">
                         <p class="mono" style="font-size:18px;color:var(--text-dim);">
-                            References: machinelearningcoban.com • Bishop (2006) • Kingma & Welling (2013)
+                            References: machinelearningcoban.com • Bishop (2006) • Liu et al., iTransformer (2024)
                         </p>
                         <p class="reveal mono cursor-blink" style="transition-delay:0.7s;font-size:20px;color:var(--accent);margin-top:16px;">
                             Questions? Let's discuss
