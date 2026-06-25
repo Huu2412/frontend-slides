@@ -1094,20 +1094,22 @@
                                 </p>
                             </div>
                         </div>
-                        <div class="col col-narrow">
-                            <div class="card card-accent" style="padding:24px;">
-                                <h3 style="font-size:22px;margin-bottom:16px;">Real-World Applications</h3>
-                                <ul class="bullet-list">
-                                    <li style="font-size:20px;">🏭 Manufacturing defects</li>
-                                    <li style="font-size:20px;">💳 Credit card fraud</li>
-                                    <li style="font-size:20px;">🖥️ Network intrusion</li>
-                                    <li style="font-size:20px;">🏥 Medical imaging</li>
-                                    <li style="font-size:20px;">📈 Stock market crashes</li>
-                                </ul>
+                        <div class="col col-narrow" style="display:flex; flex-direction:column; gap:16px; width:100%;">
+                            <div class="card card-accent" style="padding:20px; position:relative; overflow:hidden;">
+                                <h3 style="font-size:22px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                                    <span>Interactive 2D Projection</span>
+                                    <button id="addAnomalyBtn" style="font-family:var(--font-mono); font-size:12px; color:var(--accent); background:rgba(0,10,20,0.8); border:1px solid rgba(0,255,204,0.3); border-radius:4px; padding:6px 12px; cursor:pointer; transition: all 0.3s ease;">🚨 Trigger Outlier</button>
+                                </h3>
+                                <div style="position:relative; width:100%; height:320px; background:#020617; border-radius:8px; border:1px solid rgba(0,255,204,0.15); overflow:hidden;">
+                                    <canvas id="pcaAnomalyCanvas" style="display:block; width:100%; height:100%; cursor:crosshair;"></canvas>
+                                    <span style="position:absolute; bottom:8px; left:50%; transform:translateX(-50%); font-family:var(--font-mono); font-size:11px; color:rgba(0,255,204,0.5); pointer-events:none; background:rgba(0,0,0,0.6); padding:2px 8px; border-radius:10px; white-space:nowrap;">
+                                        🖱️ Move mouse to rotate axis manually
+                                    </span>
+                                </div>
                             </div>
-                            <div class="card" style="margin-top:16px;padding:16px;">
-                                <p style="font-size:18px;color:var(--text-primary);">
-                                    ⚡ <strong>Pro tip:</strong> This is <em>unsupervised</em> — no labels needed! Just train on "normal" data.
+                            <div class="card" style="padding:16px;">
+                                <p style="font-size:18px; color:var(--text-primary);">
+                                    💡 <strong>Reconstruction Error:</strong> Normal points (blue) lie close to the principal axis $\mathbf{u}_1$ (green lines). Outliers (orange) lie far from it, producing huge errors (red lines).
                                 </p>
                             </div>
                         </div>
@@ -1596,6 +1598,11 @@
                         initPca3D('pcaViz2', 'randomize2');
                     }
                 }
+
+                // Initialize 2D Anomaly Canvas on Slide 12 (index 11)
+                if (this.currentSlide === 11) {
+                    initAnomalyCanvas();
+                }
             }
         }
 
@@ -1790,6 +1797,256 @@
             setupGalaxy();
             animate();
             window.addEventListener('resize', resize);
+        }
+
+        /* ===========================================
+           2D INTERACTIVE PCA ANOMALY VISUALIZATION
+           =========================================== */
+        function initAnomalyCanvas() {
+            const canvas = document.getElementById('pcaAnomalyCanvas');
+            const triggerBtn = document.getElementById('addAnomalyBtn');
+            if (!canvas || canvas.dataset.ready === 'true') return;
+            canvas.dataset.ready = 'true';
+
+            const ctx = canvas.getContext('2d');
+            let width = canvas.width = canvas.parentElement.clientWidth;
+            let height = canvas.height = canvas.parentElement.clientHeight;
+
+            // Handle Resize
+            const resize = () => {
+                width = canvas.width = canvas.parentElement.clientWidth;
+                height = canvas.height = canvas.parentElement.clientHeight;
+            };
+            window.addEventListener('resize', resize);
+
+            const centerX = width / 2;
+            const centerY = height / 2;
+
+            // Generate Normal Points along a diagonal line (approx 25 degrees)
+            const normalPoints = [];
+            const numNormals = 35;
+            const lineAngle = 25 * Math.PI / 180; // 25 degrees
+
+            for (let i = 0; i < numNormals; i++) {
+                // Distribute along the line from -120 to 120 pixels
+                const t = (Math.random() - 0.5) * 240; 
+                // Add minor noise perpendicular to the line
+                const noise = (Math.random() - 0.5) * 25;
+                
+                const x = Math.cos(lineAngle) * t - Math.sin(lineAngle) * noise;
+                const y = Math.sin(lineAngle) * t + Math.cos(lineAngle) * noise;
+                normalPoints.push({ x, y, isAnomaly: false });
+            }
+
+            // Generate Initial Outliers (orange points far from the line)
+            const anomalyPoints = [
+                { x: -50, y: 100, isAnomaly: true },
+                { x: 70, y: -90, isAnomaly: true }
+            ];
+
+            // Add new anomaly on button click
+            if (triggerBtn) {
+                triggerBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Spawn far from the center, away from the 25 degree line
+                    const angle = Math.random() * Math.PI * 2;
+                    // Force it to be perpendicular-ish or far out
+                    const dist = 90 + Math.random() * 40;
+                    const noiseSign = Math.random() > 0.5 ? 1 : -1;
+                    const perpAngle = lineAngle + (Math.PI / 2) * noiseSign + (Math.random() - 0.5) * 0.5;
+                    
+                    anomalyPoints.push({
+                        x: Math.cos(perpAngle) * dist,
+                        y: Math.sin(perpAngle) * dist,
+                        isAnomaly: true
+                    });
+
+                    // Keep a max of 8 outliers to avoid cluttering
+                    if (anomalyPoints.length > 8) {
+                        anomalyPoints.shift();
+                    }
+                });
+            }
+
+            let mouseX = null;
+            let mouseY = null;
+            let isMouseOver = false;
+
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                mouseX = e.clientX - rect.left;
+                mouseY = e.clientY - rect.top;
+                isMouseOver = true;
+            });
+
+            canvas.addEventListener('mouseleave', () => {
+                isMouseOver = false;
+            });
+
+            // Animation Loop
+            let theta = lineAngle; // Current projection axis angle
+            let time = 0;
+
+            function draw() {
+                if (!document.getElementById('slide-12').classList.contains('active')) {
+                    // Pause rendering if slide is not active to save performance
+                    requestAnimationFrame(draw);
+                    return;
+                }
+
+                time += 0.015;
+                ctx.clearRect(0, 0, width, height);
+
+                const cX = width / 2;
+                const cY = height / 2;
+
+                // 1. Calculate the projection axis angle (theta)
+                if (isMouseOver && mouseX !== null && mouseY !== null) {
+                    // Align axis with mouse pointer
+                    const targetTheta = Math.atan2(mouseY - cY, mouseX - cX);
+                    // Smooth transition (lerp) to follow mouse
+                    theta += (targetTheta - theta) * 0.1;
+                } else {
+                    // Oscillate naturally around the main direction
+                    theta = lineAngle + Math.sin(time) * 0.12;
+                }
+
+                // Principal component vector u1 & perpendicular vector u2
+                const ux = Math.cos(theta);
+                const uy = Math.sin(theta);
+                
+                const u2x = -Math.sin(theta);
+                const u2y = Math.cos(theta);
+
+                // Draw Grid Background
+                ctx.strokeStyle = 'rgba(0, 255, 204, 0.03)';
+                ctx.lineWidth = 1;
+                const gridSize = 30;
+                for (let x = 0; x < width; x += gridSize) {
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+                }
+                for (let y = 0; y < height; y += gridSize) {
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+                }
+
+                // 2. Draw Projection Lines (Perpendicular Green/Red bars)
+                const allPoints = [...normalPoints, ...anomalyPoints];
+                
+                allPoints.forEach(p => {
+                    // Project point onto u1 vector
+                    // Projection: (p . u1) * u1
+                    const dot = p.x * ux + p.y * uy;
+                    const projX = dot * ux;
+                    const projY = dot * uy;
+
+                    // Calculate distance vector (reconstruction error)
+                    const diffX = p.x - projX;
+                    const diffY = p.y - projY;
+                    const error = Math.hypot(diffX, diffY);
+
+                    // Draw the perpendicular guideline
+                    ctx.beginPath();
+                    ctx.moveTo(cX + p.x, cY + p.y);
+                    ctx.lineTo(cX + projX, cY + projY);
+                    
+                    if (p.isAnomaly) {
+                        ctx.strokeStyle = 'rgba(255, 0, 100, 0.8)';
+                        ctx.lineWidth = 2;
+                        // Glowing effect for outlier guides
+                        ctx.shadowBlur = 8;
+                        ctx.shadowColor = 'rgba(255, 0, 100, 0.5)';
+                    } else {
+                        ctx.strokeStyle = 'rgba(0, 255, 128, 0.6)';
+                        ctx.lineWidth = 1.2;
+                        ctx.shadowBlur = 0;
+                    }
+                    ctx.stroke();
+                    ctx.shadowBlur = 0; // reset
+                });
+
+                // 3. Draw Principal Axis (u1)
+                const axisLength = Math.max(width, height) * 0.45;
+                ctx.beginPath();
+                ctx.moveTo(cX - ux * axisLength, cY - uy * axisLength);
+                ctx.lineTo(cX + ux * axisLength, cY + uy * axisLength);
+                ctx.strokeStyle = '#00ffcc';
+                ctx.lineWidth = 3;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = 'rgba(0, 255, 204, 0.4)';
+                ctx.stroke();
+                ctx.shadowBlur = 0; // reset
+
+                // Draw u1 arrow head
+                const arrowSize = 10;
+                const aX = cX + ux * axisLength;
+                const aY = cY + uy * axisLength;
+                ctx.beginPath();
+                ctx.moveTo(aX, aY);
+                ctx.lineTo(aX - ux * arrowSize + u2x * arrowSize * 0.5, aY - uy * arrowSize + u2y * arrowSize * 0.5);
+                ctx.lineTo(aX - ux * arrowSize - u2x * arrowSize * 0.5, aY - uy * arrowSize - u2y * arrowSize * 0.5);
+                ctx.closePath();
+                ctx.fillStyle = '#00ffcc';
+                ctx.fill();
+
+                // Draw u1 text label
+                ctx.font = '16px "JetBrains Mono", monospace';
+                ctx.fillStyle = '#00ffcc';
+                ctx.fillText('u1', aX + ux * 10 - u2x * 8, aY + uy * 10 - u2y * 8);
+
+                // 4. Draw Orthogonal Axis (u2) - dashed line
+                ctx.beginPath();
+                ctx.setLineDash([6, 6]);
+                ctx.moveTo(cX - u2x * axisLength * 0.6, cY - u2y * axisLength * 0.6);
+                ctx.lineTo(cX + u2x * axisLength * 0.6, cY + u2y * axisLength * 0.6);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.setLineDash([]); // reset
+
+                // Draw u2 text label
+                const a2X = cX + u2x * axisLength * 0.6;
+                const a2Y = cY + u2y * axisLength * 0.6;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.fillText('u2', a2X + u2x * 10, a2Y + u2y * 10);
+
+                // 5. Draw Data Points
+                allPoints.forEach(p => {
+                    ctx.beginPath();
+                    ctx.arc(cX + p.x, cY + p.y, p.isAnomaly ? 7 : 5, 0, Math.PI * 2);
+                    
+                    if (p.isAnomaly) {
+                        ctx.fillStyle = '#ff9900'; // Orange outlier
+                        ctx.strokeStyle = '#ff0055';
+                        ctx.lineWidth = 2;
+                        ctx.shadowBlur = 12;
+                        ctx.shadowColor = '#ff0055';
+                        ctx.fill();
+                        ctx.stroke();
+                    } else {
+                        ctx.fillStyle = '#3b82f6'; // Blue normal point
+                        ctx.strokeStyle = '#00ffcc';
+                        ctx.lineWidth = 1.2;
+                        ctx.shadowBlur = 0;
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+                    ctx.shadowBlur = 0; // reset
+                });
+
+                // 6. Threshold boundary indicator (dotted circle illustrating the cutoff score)
+                ctx.beginPath();
+                ctx.arc(cX, cY, 65, 0, Math.PI * 2);
+                ctx.setLineDash([3, 8]);
+                ctx.strokeStyle = 'rgba(255, 0, 85, 0.25)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.setLineDash([]); // reset
+
+                requestAnimationFrame(draw);
+            }
+
+            // Start loop
+            draw();
         }
 
         /* ===========================================
