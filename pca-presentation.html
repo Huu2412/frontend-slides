@@ -1,23 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PCA — Principal Component Analysis | Deep Dive</title>
-    <meta name="description"
-        content="A comprehensive presentation on PCA algorithm workflow, math, and SOTA connections to Deep Learning and Federated Learning">
+    <meta name="description" content="A comprehensive presentation on PCA algorithm workflow, math, and SOTA connections to Deep Learning and Federated Learning">
 
     <!-- Fonts: Clash Display + Satoshi from Fontshare -->
-    <link rel="stylesheet"
-        href="https://api.fontshare.com/v2/css?f[]=clash-display@400;500;600;700&f[]=satoshi@400;500;700&display=swap">
+    <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@400;500;600;700&f[]=satoshi@400;500;700&display=swap">
     <!-- JetBrains Mono for code/math accents -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap">
 
     <!-- MathJax for LaTeX formulas -->
     <script>
         window.MathJax = {
-            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+            tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
             svg: { fontCache: 'global' },
             startup: { typeset: true }
         };
@@ -64,133 +61,51 @@
         /* ===========================================
            BASE STYLES
            =========================================== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         /* === VIEWPORT-BASE.CSS (MANDATORY) === */
-        html,
-        body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            overflow: hidden;
+        html, body {
+            width: 100%; height: 100%;
+            margin: 0; overflow: hidden;
             background: var(--stage-bg, #000);
         }
-
         .deck-viewport {
-            position: fixed;
-            inset: 0;
-            overflow: hidden;
+            position: fixed; inset: 0; overflow: hidden;
             background: var(--stage-bg, #000);
         }
-
         .deck-stage {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 1920px;
-            height: 1080px;
-            overflow: hidden;
-            transform-origin: 0 0;
+            position: absolute; left: 0; top: 0;
+            width: 1920px; height: 1080px;
+            overflow: hidden; transform-origin: 0 0;
             background: var(--slide-bg, #fff);
         }
-
         .slide {
-            position: absolute;
-            inset: 0;
-            width: 1920px;
-            height: 1080px;
-            overflow: hidden;
-            display: block;
-            visibility: hidden;
-            opacity: 0;
-            pointer-events: none;
+            position: absolute; inset: 0;
+            width: 1920px; height: 1080px;
+            overflow: hidden; display: block;
+            visibility: hidden; opacity: 0; pointer-events: none;
             background: var(--slide-bg, #fff);
         }
-
-        .slide.active,
-        .slide.visible {
-            visibility: visible;
-            opacity: 1;
-            pointer-events: auto;
-            z-index: 1;
+        .slide.active, .slide.visible {
+            visibility: visible; opacity: 1;
+            pointer-events: auto; z-index: 1;
         }
-
-        img,
-        video,
-        canvas,
-        svg {
-            max-width: 100%;
-            max-height: 100%;
-        }
-
+        img, video, canvas, svg { max-width: 100%; max-height: 100%; }
         .deck-controls {
-            position: fixed;
-            left: 50%;
-            bottom: 22px;
-            transform: translateX(-50%);
-            z-index: 1000;
+            position: fixed; left: 50%; bottom: 22px;
+            transform: translateX(-50%); z-index: 1000;
         }
-
         @media print {
-
-            html,
-            body {
-                width: 1920px;
-                height: auto;
-                overflow: visible;
-                background: #fff;
-            }
-
-            .deck-viewport {
-                position: static;
-                overflow: visible;
-                background: #fff;
-            }
-
-            .deck-stage {
-                position: static;
-                width: auto;
-                height: auto;
-                transform: none !important;
-                background: none;
-            }
-
-            .slide {
-                position: relative;
-                display: block !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                pointer-events: auto !important;
-                width: 1920px;
-                height: 1080px;
-                break-after: page;
-                page-break-after: always;
-            }
-
-            .slide:last-child {
-                break-after: auto;
-                page-break-after: auto;
-            }
-
-            .deck-controls {
-                display: none !important;
-            }
+            html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+            .deck-viewport { position: static; overflow: visible; background: #fff; }
+            .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+            .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+            .slide:last-child { break-after: auto; page-break-after: auto; }
+            .deck-controls { display: none !important; }
         }
-
         @media (prefers-reduced-motion: reduce) {
-
-            *,
-            *::before,
-            *::after {
-                animation-duration: 0.01ms !important;
-                transition-duration: 0.2s !important;
-            }
+            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
         }
-
         /* === END VIEWPORT-BASE.CSS === */
 
         /* ===========================================
@@ -198,8 +113,7 @@
            =========================================== */
         .slide::before {
             content: '';
-            position: absolute;
-            inset: 0;
+            position: absolute; inset: 0;
             background-image:
                 linear-gradient(var(--grid-color) 1px, transparent 1px),
                 linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
@@ -211,616 +125,288 @@
         /* ===========================================
            TYPOGRAPHY
            =========================================== */
-        h1 {
-            font-family: var(--font-display);
-            font-weight: 700;
-            color: var(--text-primary);
-            line-height: 1.1;
-        }
-
-        h2 {
-            font-family: var(--font-display);
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 52px;
-            line-height: 1.2;
-        }
-
-        h3 {
-            font-family: var(--font-display);
-            font-weight: 500;
-            color: var(--accent);
-            font-size: 36px;
-        }
-
-        p,
-        li {
-            font-family: var(--font-body);
-            font-weight: 400;
-            color: var(--text-secondary);
-            font-size: var(--body-size);
-            line-height: 1.6;
-        }
-
-        .mono {
-            font-family: var(--font-mono);
-        }
-
-        .accent {
-            color: var(--accent);
-        }
-
-        .accent2 {
-            color: var(--accent2);
-        }
-
-        .accent3 {
-            color: var(--accent3);
-        }
-
-        .accent4 {
-            color: var(--accent4);
-        }
-
-        .dim {
-            color: var(--text-dim);
-        }
-
-        .text-white {
-            color: var(--text-primary);
-        }
+        h1 { font-family: var(--font-display); font-weight: 700; color: var(--text-primary); line-height: 1.1; }
+        h2 { font-family: var(--font-display); font-weight: 600; color: var(--text-primary); font-size: 52px; line-height: 1.2; }
+        h3 { font-family: var(--font-display); font-weight: 500; color: var(--accent); font-size: 36px; }
+        p, li { font-family: var(--font-body); font-weight: 400; color: var(--text-secondary); font-size: var(--body-size); line-height: 1.6; }
+        .mono { font-family: var(--font-mono); }
+        .accent { color: var(--accent); }
+        .accent2 { color: var(--accent2); }
+        .accent3 { color: var(--accent3); }
+        .accent4 { color: var(--accent4); }
+        .dim { color: var(--text-dim); }
+        .text-white { color: var(--text-primary); }
 
         /* ===========================================
            ANIMATIONS
            =========================================== */
         .reveal {
-            opacity: 0;
-            transform: translateY(30px);
+            opacity: 0; transform: translateY(30px);
             transition: opacity var(--duration-normal) var(--ease-out-expo),
-                transform var(--duration-normal) var(--ease-out-expo);
+                        transform var(--duration-normal) var(--ease-out-expo);
         }
-
-        .slide.visible .reveal {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .reveal:nth-child(1) {
-            transition-delay: 0.1s;
-        }
-
-        .reveal:nth-child(2) {
-            transition-delay: 0.2s;
-        }
-
-        .reveal:nth-child(3) {
-            transition-delay: 0.3s;
-        }
-
-        .reveal:nth-child(4) {
-            transition-delay: 0.4s;
-        }
-
-        .reveal:nth-child(5) {
-            transition-delay: 0.5s;
-        }
-
-        .reveal:nth-child(6) {
-            transition-delay: 0.6s;
-        }
-
-        .reveal:nth-child(7) {
-            transition-delay: 0.7s;
-        }
+        .slide.visible .reveal { opacity: 1; transform: translateY(0); }
+        .reveal:nth-child(1) { transition-delay: 0.1s; }
+        .reveal:nth-child(2) { transition-delay: 0.2s; }
+        .reveal:nth-child(3) { transition-delay: 0.3s; }
+        .reveal:nth-child(4) { transition-delay: 0.4s; }
+        .reveal:nth-child(5) { transition-delay: 0.5s; }
+        .reveal:nth-child(6) { transition-delay: 0.6s; }
+        .reveal:nth-child(7) { transition-delay: 0.7s; }
 
         .reveal-left {
-            opacity: 0;
-            transform: translateX(-50px);
+            opacity: 0; transform: translateX(-50px);
             transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo);
         }
-
-        .slide.visible .reveal-left {
-            opacity: 1;
-            transform: translateX(0);
-        }
+        .slide.visible .reveal-left { opacity: 1; transform: translateX(0); }
 
         .reveal-scale {
-            opacity: 0;
-            transform: scale(0.9);
+            opacity: 0; transform: scale(0.9);
             transition: opacity 0.6s, transform 0.6s var(--ease-out-expo);
         }
-
-        .slide.visible .reveal-scale {
-            opacity: 1;
-            transform: scale(1);
-        }
+        .slide.visible .reveal-scale { opacity: 1; transform: scale(1); }
 
         @keyframes glow-pulse {
-
-            0%,
-            100% {
-                box-shadow: 0 0 20px var(--accent-glow), 0 0 60px rgba(0, 255, 204, 0.1);
-            }
-
-            50% {
-                box-shadow: 0 0 40px var(--accent-glow), 0 0 100px rgba(0, 255, 204, 0.15);
-            }
+            0%, 100% { box-shadow: 0 0 20px var(--accent-glow), 0 0 60px rgba(0,255,204,0.1); }
+            50% { box-shadow: 0 0 40px var(--accent-glow), 0 0 100px rgba(0,255,204,0.15); }
         }
-
         @keyframes float {
-
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-10px);
-            }
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
-
         @keyframes scan-line {
-            0% {
-                transform: translateY(-100%);
-            }
-
-            100% {
-                transform: translateY(1080px);
-            }
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(1080px); }
         }
-
-        @keyframes typing-blink {
-
-            0%,
-            50% {
-                opacity: 1;
-            }
-
-            51%,
-            100% {
-                opacity: 0;
-            }
-        }
+        @keyframes typing-blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
 
         /* ===========================================
            SLIDE LAYOUTS
            =========================================== */
         .slide-content {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            height: 100%;
+            position: relative; z-index: 1;
+            width: 100%; height: 100%;
             padding: var(--slide-padding);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            display: flex; flex-direction: column; justify-content: center;
         }
 
         /* Title slide special layout */
         .title-slide .slide-content {
-            justify-content: center;
-            align-items: center;
-            text-align: center;
+            justify-content: center; align-items: center; text-align: center;
         }
 
         /* Section header */
         .section-slide .slide-content {
-            justify-content: center;
-            align-items: flex-start;
+            justify-content: center; align-items: flex-start;
         }
 
         /* Two column layout */
         .two-col {
-            display: flex;
-            gap: 60px;
-            align-items: flex-start;
+            display: flex; gap: 60px; align-items: flex-start;
         }
-
-        .two-col .col {
-            flex: 1;
-        }
-
-        .two-col .col-wide {
-            flex: 1.4;
-        }
-
-        .two-col .col-narrow {
-            flex: 0.6;
-        }
+        .two-col .col { flex: 1; }
+        .two-col .col-wide { flex: 1.4; }
+        .two-col .col-narrow { flex: 0.6; }
 
         /* Cards */
         .card {
             background: var(--bg-card);
-            border: 1px solid rgba(0, 255, 204, 0.1);
+            border: 1px solid rgba(0,255,204,0.1);
             border-radius: 16px;
             padding: 36px;
             transition: border-color 0.3s ease;
         }
-
-        .card:hover {
-            border-color: rgba(0, 255, 204, 0.3);
-        }
+        .card:hover { border-color: rgba(0,255,204,0.3); }
 
         .card-accent {
-            background: linear-gradient(135deg, rgba(0, 255, 204, 0.08), rgba(123, 97, 255, 0.08));
-            border: 1px solid rgba(0, 255, 204, 0.15);
+            background: linear-gradient(135deg, rgba(0,255,204,0.08), rgba(123,97,255,0.08));
+            border: 1px solid rgba(0,255,204,0.15);
         }
 
         /* Step indicator */
         .step-number {
             font-family: var(--font-display);
-            font-size: 120px;
-            font-weight: 700;
-            color: rgba(0, 255, 204, 0.08);
-            position: absolute;
-            top: 40px;
-            right: 80px;
+            font-size: 120px; font-weight: 700;
+            color: rgba(0,255,204,0.08);
+            position: absolute; top: 40px; right: 80px;
             line-height: 1;
         }
 
         /* Slide number */
         .slide-num {
-            position: absolute;
-            bottom: 32px;
-            right: 48px;
-            font-family: var(--font-mono);
-            font-size: 16px;
-            color: var(--text-dim);
-            z-index: 2;
+            position: absolute; bottom: 32px; right: 48px;
+            font-family: var(--font-mono); font-size: 16px;
+            color: var(--text-dim); z-index: 2;
         }
 
         /* Topic tag */
         .topic-tag {
             display: inline-block;
-            font-family: var(--font-mono);
-            font-size: 14px;
-            color: var(--accent);
-            text-transform: uppercase;
+            font-family: var(--font-mono); font-size: 14px;
+            color: var(--accent); text-transform: uppercase;
             letter-spacing: 3px;
             padding: 6px 16px;
-            border: 1px solid rgba(0, 255, 204, 0.3);
+            border: 1px solid rgba(0,255,204,0.3);
             border-radius: 4px;
             margin-bottom: 24px;
         }
 
         /* Formula box */
         .formula-box {
-            background: rgba(0, 255, 204, 0.04);
+            background: rgba(0,255,204,0.04);
             border-left: 3px solid var(--accent);
             padding: 28px 36px;
             border-radius: 0 12px 12px 0;
             margin: 20px 0;
         }
-
-        .formula-box mjx-container {
-            font-size: 110% !important;
-        }
+        .formula-box mjx-container { font-size: 110% !important; }
 
         /* Glow decorations */
         .glow-orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            pointer-events: none;
-            z-index: 0;
+            position: absolute; border-radius: 50%;
+            filter: blur(80px); pointer-events: none; z-index: 0;
         }
-
-        .glow-orb.cyan {
-            background: rgba(0, 255, 204, 0.12);
-        }
-
-        .glow-orb.magenta {
-            background: rgba(255, 0, 170, 0.08);
-        }
-
-        .glow-orb.purple {
-            background: rgba(123, 97, 255, 0.1);
-        }
+        .glow-orb.cyan { background: rgba(0,255,204,0.12); }
+        .glow-orb.magenta { background: rgba(255,0,170,0.08); }
+        .glow-orb.purple { background: rgba(123,97,255,0.1); }
 
         /* Image container */
         .img-container {
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid rgba(0, 255, 204, 0.15);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 40px rgba(0, 255, 204, 0.05);
+            border-radius: 12px; overflow: hidden;
+            border: 1px solid rgba(0,255,204,0.15);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 40px rgba(0,255,204,0.05);
         }
-
         .img-container img {
-            display: block;
-            width: 100%;
-            height: auto;
+            display: block; width: 100%; height: auto;
             object-fit: contain;
         }
 
         /* === 3D INTERACTIVE VISUALIZATION CONTAINERS === */
         .threejs-container {
-            width: 100%;
-            height: 100%;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid rgba(0, 255, 204, 0.15);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 40px rgba(0, 255, 204, 0.05);
-            cursor: grab;
-            position: relative;
+            width: 100%; height: 100%;
+            border-radius: 12px; overflow: hidden;
+            border: 1px solid rgba(0,255,204,0.15);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 40px rgba(0,255,204,0.05);
+            cursor: grab; position: relative;
             background: #020617;
         }
-
-        .threejs-container:active {
-            cursor: grabbing;
-        }
-
-        .threejs-container canvas {
-            display: block;
-            width: 100% !important;
-            height: 100% !important;
-        }
-
+        .threejs-container:active { cursor: grabbing; }
+        .threejs-container canvas { display: block; width: 100% !important; height: 100% !important; }
         .viz-hint {
-            position: absolute;
-            bottom: 12px;
-            left: 50%;
+            position: absolute; bottom: 12px; left: 50%;
             transform: translateX(-50%);
-            font-family: var(--font-mono);
-            font-size: 12px;
-            color: rgba(0, 255, 204, 0.5);
-            padding: 4px 12px;
-            border-radius: 12px;
-            background: rgba(0, 0, 0, 0.5);
-            pointer-events: none;
-            z-index: 5;
+            font-family: var(--font-mono); font-size: 12px;
+            color: rgba(0,255,204,0.5);
+            padding: 4px 12px; border-radius: 12px;
+            background: rgba(0,0,0,0.5);
+            pointer-events: none; z-index: 5;
             transition: opacity 0.5s ease;
         }
-
-        .threejs-container.dragged .viz-hint {
-            opacity: 0;
-        }
-
+        .threejs-container.dragged .viz-hint { opacity: 0; }
         .randomize-btn {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            z-index: 5;
-            font-family: var(--font-mono);
-            font-size: 12px;
-            color: var(--accent);
-            background: rgba(0, 10, 20, 0.8);
-            border: 1px solid rgba(0, 255, 204, 0.3);
-            border-radius: 6px;
-            padding: 6px 14px;
-            cursor: pointer;
+            position: absolute; top: 12px; right: 12px; z-index: 5;
+            font-family: var(--font-mono); font-size: 12px;
+            color: var(--accent); background: rgba(0,10,20,0.8);
+            border: 1px solid rgba(0,255,204,0.3); border-radius: 6px;
+            padding: 6px 14px; cursor: pointer;
             transition: all 0.3s ease;
         }
-
         .randomize-btn:hover {
-            background: rgba(0, 255, 204, 0.1);
-            box-shadow: 0 0 12px rgba(0, 255, 204, 0.2);
+            background: rgba(0,255,204,0.1);
+            box-shadow: 0 0 12px rgba(0,255,204,0.2);
         }
 
         /* === ANIMATED AUTOENCODER DIAGRAM === */
         .ae-diagram {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            padding: 20px;
-            height: 100%;
-            width: 100%;
+            display: flex; align-items: center; justify-content: center;
+            gap: 4px; padding: 20px;
+            height: 100%; width: 100%;
         }
-
         .ae-layer {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 6px;
         }
-
         .ae-node {
-            width: 16px;
-            border-radius: 50%;
+            width: 16px; border-radius: 50%;
             transition: all 0.3s ease;
         }
-
-        .ae-node.input {
-            background: #3b82f6;
-            height: 16px;
-        }
-
-        .ae-node.hidden {
-            background: #7b61ff;
-            height: 16px;
-        }
-
-        .ae-node.latent {
-            background: var(--accent);
-            height: 16px;
-            box-shadow: 0 0 12px var(--accent-glow);
-        }
-
-        .ae-node.output {
-            background: #ff00aa;
-            height: 16px;
-        }
-
+        .ae-node.input { background: #3b82f6; height: 16px; }
+        .ae-node.hidden { background: #7b61ff; height: 16px; }
+        .ae-node.latent { background: var(--accent); height: 16px; box-shadow: 0 0 12px var(--accent-glow); }
+        .ae-node.output { background: #ff00aa; height: 16px; }
         @keyframes pulse-node {
-
-            0%,
-            100% {
-                transform: scale(1);
-                opacity: 0.8;
-            }
-
-            50% {
-                transform: scale(1.3);
-                opacity: 1;
-            }
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.3); opacity: 1; }
         }
-
-        .ae-layer:nth-child(1) .ae-node {
-            animation: pulse-node 2s ease-in-out infinite;
-        }
-
-        .ae-layer:nth-child(2) .ae-node {
-            animation: pulse-node 2s ease-in-out 0.2s infinite;
-        }
-
-        .ae-layer:nth-child(3) .ae-node {
-            animation: pulse-node 2s ease-in-out 0.4s infinite;
-        }
-
-        .ae-layer:nth-child(4) .ae-node {
-            animation: pulse-node 2s ease-in-out 0.6s infinite;
-        }
-
-        .ae-layer:nth-child(5) .ae-node {
-            animation: pulse-node 2s ease-in-out 0.8s infinite;
-        }
-
-        .ae-layer:nth-child(6) .ae-node {
-            animation: pulse-node 2s ease-in-out 1.0s infinite;
-        }
-
-        .ae-layer:nth-child(7) .ae-node {
-            animation: pulse-node 2s ease-in-out 1.2s infinite;
-        }
-
+        .ae-layer:nth-child(1) .ae-node { animation: pulse-node 2s ease-in-out infinite; }
+        .ae-layer:nth-child(2) .ae-node { animation: pulse-node 2s ease-in-out 0.2s infinite; }
+        .ae-layer:nth-child(3) .ae-node { animation: pulse-node 2s ease-in-out 0.4s infinite; }
+        .ae-layer:nth-child(4) .ae-node { animation: pulse-node 2s ease-in-out 0.6s infinite; }
+        .ae-layer:nth-child(5) .ae-node { animation: pulse-node 2s ease-in-out 0.8s infinite; }
+        .ae-layer:nth-child(6) .ae-node { animation: pulse-node 2s ease-in-out 1.0s infinite; }
+        .ae-layer:nth-child(7) .ae-node { animation: pulse-node 2s ease-in-out 1.2s infinite; }
         .ae-connector {
-            width: 20px;
-            height: 2px;
-            background: linear-gradient(90deg, rgba(123, 97, 255, 0.4), rgba(0, 255, 204, 0.4));
+            width: 20px; height: 2px;
+            background: linear-gradient(90deg, rgba(123,97,255,0.4), rgba(0,255,204,0.4));
         }
-
         .ae-label {
-            font-family: var(--font-mono);
-            font-size: 11px;
-            color: var(--text-dim);
-            text-align: center;
+            font-family: var(--font-mono); font-size: 11px;
+            color: var(--text-dim); text-align: center;
             margin-top: 6px;
         }
-
         .ae-bracket {
-            font-family: var(--font-mono);
-            font-size: 14px;
-            color: var(--accent);
-            padding: 0 4px;
+            font-family: var(--font-mono); font-size: 14px;
+            color: var(--accent); padding: 0 4px;
             writing-mode: vertical-lr;
             transform: rotate(180deg);
         }
 
         /* === ANIMATED FEDERATED NETWORK === */
         .fed-network {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            position: relative; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
         }
-
         .fed-server {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(0, 255, 204, 0.3), rgba(0, 255, 204, 0.05));
+            width: 80px; height: 80px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,255,204,0.3), rgba(0,255,204,0.05));
             border: 2px solid var(--accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            z-index: 3;
-            box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px; z-index: 3;
+            box-shadow: 0 0 30px rgba(0,255,204,0.2);
             animation: glow-pulse 3s ease-in-out infinite;
         }
-
         .fed-node {
-            position: absolute;
-            width: 56px;
-            height: 56px;
+            position: absolute; width: 56px; height: 56px;
             border-radius: 12px;
             background: var(--bg-card);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            z-index: 3;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; z-index: 3;
             transition: all 0.3s ease;
         }
-
-        .fed-node:hover {
-            border-color: var(--accent);
-            transform: scale(1.1);
-        }
-
-        .fed-node:nth-child(2) {
-            top: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        .fed-node:nth-child(3) {
-            top: 45%;
-            right: 20px;
-        }
-
-        .fed-node:nth-child(4) {
-            bottom: 30px;
-            right: 30%;
-        }
-
-        .fed-node:nth-child(5) {
-            bottom: 30px;
-            left: 30%;
-        }
-
-        .fed-node:nth-child(6) {
-            top: 45%;
-            left: 20px;
-        }
-
+        .fed-node:hover { border-color: var(--accent); transform: scale(1.1); }
+        .fed-node:nth-child(2) { top: 30px; left: 50%; transform: translateX(-50%); }
+        .fed-node:nth-child(3) { top: 45%; right: 20px; }
+        .fed-node:nth-child(4) { bottom: 30px; right: 30%; }
+        .fed-node:nth-child(5) { bottom: 30px; left: 30%; }
+        .fed-node:nth-child(6) { top: 45%; left: 20px; }
         @keyframes data-flow {
-            0% {
-                stroke-dashoffset: 20;
-                opacity: 0.3;
-            }
-
-            50% {
-                opacity: 0.8;
-            }
-
-            100% {
-                stroke-dashoffset: 0;
-                opacity: 0.3;
-            }
+            0% { stroke-dashoffset: 20; opacity: 0.3; }
+            50% { opacity: 0.8; }
+            100% { stroke-dashoffset: 0; opacity: 0.3; }
         }
-
         .fed-lines {
-            position: absolute;
-            inset: 0;
-            z-index: 1;
+            position: absolute; inset: 0; z-index: 1;
         }
-
         .fed-lines line {
-            stroke: var(--accent);
-            stroke-width: 1.5;
+            stroke: var(--accent); stroke-width: 1.5;
             stroke-dasharray: 6 4;
             animation: data-flow 2s linear infinite;
         }
-
-        .fed-lines line:nth-child(2) {
-            animation-delay: 0.4s;
-        }
-
-        .fed-lines line:nth-child(3) {
-            animation-delay: 0.8s;
-        }
-
-        .fed-lines line:nth-child(4) {
-            animation-delay: 1.2s;
-        }
-
-        .fed-lines line:nth-child(5) {
-            animation-delay: 1.6s;
-        }
+        .fed-lines line:nth-child(2) { animation-delay: 0.4s; }
+        .fed-lines line:nth-child(3) { animation-delay: 0.8s; }
+        .fed-lines line:nth-child(4) { animation-delay: 1.2s; }
+        .fed-lines line:nth-child(5) { animation-delay: 1.6s; }
 
         /* Workflow step cards */
         .workflow-grid {
@@ -828,89 +414,61 @@
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 20px;
         }
-
         .workflow-step {
             background: var(--bg-card);
-            border: 1px solid rgba(0, 255, 204, 0.08);
+            border: 1px solid rgba(0,255,204,0.08);
             border-radius: 12px;
             padding: 24px;
             text-align: center;
             transition: all 0.3s ease;
         }
-
         .workflow-step:hover {
             border-color: var(--accent);
             transform: translateY(-4px);
         }
-
         .workflow-step .step-icon {
-            font-size: 36px;
-            margin-bottom: 12px;
+            font-size: 36px; margin-bottom: 12px;
         }
-
         .workflow-step h4 {
-            font-family: var(--font-display);
-            font-size: 20px;
-            color: var(--accent);
-            margin-bottom: 8px;
+            font-family: var(--font-display); font-size: 20px;
+            color: var(--accent); margin-bottom: 8px;
         }
-
         .workflow-step p {
-            font-size: 16px;
-            color: var(--text-dim);
-            line-height: 1.4;
+            font-size: 16px; color: var(--text-dim); line-height: 1.4;
         }
 
         /* Bullet list styling */
         .bullet-list {
-            list-style: none;
-            padding: 0;
+            list-style: none; padding: 0;
         }
-
         .bullet-list li {
-            position: relative;
-            padding-left: 28px;
-            margin-bottom: 16px;
-            font-size: 26px;
+            position: relative; padding-left: 28px;
+            margin-bottom: 16px; font-size: 26px;
         }
-
         .bullet-list li::before {
             content: '▹';
-            position: absolute;
-            left: 0;
-            color: var(--accent);
+            position: absolute; left: 0; color: var(--accent);
             font-size: 20px;
         }
 
         /* Connection line between sections */
         .connector {
-            width: 2px;
-            height: 40px;
+            width: 2px; height: 40px;
             background: linear-gradient(to bottom, var(--accent), transparent);
             margin: 16px auto;
         }
 
         /* Progress dots */
         .progress-dots {
-            position: fixed;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            position: fixed; right: 20px; top: 50%;
+            transform: translateY(-50%); z-index: 1000;
+            display: flex; flex-direction: column; gap: 8px;
         }
-
         .progress-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
+            width: 8px; height: 8px; border-radius: 50%;
             background: var(--text-dim);
-            transition: all 0.3s ease;
-            cursor: pointer;
+            transition: all 0.3s ease; cursor: pointer;
         }
-
         .progress-dot.active {
             background: var(--accent);
             box-shadow: 0 0 10px var(--accent-glow);
@@ -919,129 +477,80 @@
 
         /* Scan line effect for title slide */
         .scan-line {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 2px;
             background: linear-gradient(90deg, transparent, var(--accent), transparent);
             opacity: 0.3;
             animation: scan-line 4s linear infinite;
-            pointer-events: none;
-            z-index: 2;
+            pointer-events: none; z-index: 2;
         }
 
         /* Blinking cursor */
         .cursor-blink::after {
-            content: '|';
-            color: var(--accent);
+            content: '|'; color: var(--accent);
             animation: typing-blink 1s infinite;
         }
 
         /* MathJax override for dark theme */
-        mjx-container[jax="SVG"] {
-            color: var(--text-primary) !important;
-        }
-
-        mjx-container[jax="SVG"] svg {
-            fill: var(--text-primary);
-        }
+        mjx-container[jax="SVG"] { color: var(--text-primary) !important; }
+        mjx-container[jax="SVG"] svg { fill: var(--text-primary); }
 
         /* Comparison table */
         .compare-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-family: var(--font-body);
-            font-size: 22px;
+            width: 100%; border-collapse: collapse;
+            font-family: var(--font-body); font-size: 22px;
         }
-
         .compare-table th {
-            font-family: var(--font-display);
-            font-size: 22px;
-            color: var(--accent);
-            text-align: left;
+            font-family: var(--font-display); font-size: 22px;
+            color: var(--accent); text-align: left;
             padding: 16px 20px;
-            border-bottom: 2px solid rgba(0, 255, 204, 0.2);
+            border-bottom: 2px solid rgba(0,255,204,0.2);
         }
-
         .compare-table td {
-            padding: 14px 20px;
-            color: var(--text-secondary);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 14px 20px; color: var(--text-secondary);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
         }
-
-        .compare-table tr:hover td {
-            background: rgba(0, 255, 204, 0.03);
-        }
+        .compare-table tr:hover td { background: rgba(0,255,204,0.03); }
 
         /* SOTA badge */
         .sota-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-family: var(--font-mono);
-            font-size: 13px;
-            color: var(--accent2);
-            text-transform: uppercase;
+            display: inline-flex; align-items: center; gap: 8px;
+            font-family: var(--font-mono); font-size: 13px;
+            color: var(--accent2); text-transform: uppercase;
             letter-spacing: 2px;
             padding: 5px 14px;
-            border: 1px solid rgba(255, 0, 170, 0.3);
+            border: 1px solid rgba(255,0,170,0.3);
             border-radius: 4px;
             margin-bottom: 20px;
         }
 
         /* Inline edit support */
         .edit-hotzone {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 80px;
-            height: 80px;
-            z-index: 10000;
-            cursor: pointer;
+            position: fixed; top: 0; left: 0;
+            width: 80px; height: 80px; z-index: 10000; cursor: pointer;
         }
-
         .edit-toggle {
-            position: fixed;
-            top: 16px;
-            left: 16px;
-            background: var(--bg-card);
-            border: 1px solid rgba(0, 255, 204, 0.2);
-            color: var(--accent);
-            font-size: 18px;
-            width: 44px;
-            height: 44px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            z-index: 10001;
-            cursor: pointer;
+            position: fixed; top: 16px; left: 16px;
+            background: var(--bg-card); border: 1px solid rgba(0,255,204,0.2);
+            color: var(--accent); font-size: 18px;
+            width: 44px; height: 44px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease; z-index: 10001; cursor: pointer;
         }
-
-        .edit-toggle.show,
-        .edit-toggle.active {
-            opacity: 1;
-            pointer-events: auto;
+        .edit-toggle.show, .edit-toggle.active {
+            opacity: 1; pointer-events: auto;
         }
 
         /* Slide counter */
         .slide-counter {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            font-family: var(--font-mono);
-            font-size: 14px;
+            position: fixed; bottom: 20px; left: 50%;
+            transform: translateX(-50%); z-index: 1000;
+            font-family: var(--font-mono); font-size: 14px;
             color: var(--text-dim);
-            background: rgba(10, 15, 28, 0.8);
-            padding: 6px 16px;
-            border-radius: 20px;
-            border: 1px solid rgba(0, 255, 204, 0.08);
+            background: rgba(10,15,28,0.8);
+            padding: 6px 16px; border-radius: 20px;
+            border: 1px solid rgba(0,255,204,0.08);
         }
 
         /* Arrow icon between steps */
@@ -1053,16 +562,13 @@
 
         /* Code-like formula highlight */
         .code-highlight {
-            background: rgba(0, 255, 204, 0.08);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-family: var(--font-mono);
-            font-size: 0.9em;
+            background: rgba(0,255,204,0.08);
+            padding: 2px 8px; border-radius: 4px;
+            font-family: var(--font-mono); font-size: 0.9em;
             color: var(--accent);
         }
     </style>
 </head>
-
 <body>
     <div class="deck-viewport">
         <main class="deck-stage" id="deckStage">
@@ -1079,8 +585,7 @@
                     <h1 class="reveal" style="font-size:110px;margin-bottom:24px;">
                         PCA<span class="accent">.</span>
                     </h1>
-                    <p class="reveal"
-                        style="font-size:38px;color:var(--text-secondary);max-width:900px;margin:0 auto 32px;">
+                    <p class="reveal" style="font-size:38px;color:var(--text-secondary);max-width:900px;margin:0 auto 32px;">
                         Principal Component Analysis
                     </p>
                     <p class="reveal mono" style="font-size:20px;color:var(--text-dim);">
@@ -1117,8 +622,7 @@
                             </ul>
                             <div class="formula-box" style="margin-top:24px;">
                                 <p style="font-size:22px;color:var(--text-primary);">
-                                    <strong>Goal:</strong> Find a function $f: \mathbb{R}^D \to \mathbb{R}^K$ where $K
-                                    \ll D$<br>
+                                    <strong>Goal:</strong> Find a function $f: \mathbb{R}^D \to \mathbb{R}^K$ where $K \ll D$<br>
                                     that preserves the "important stuff"
                                 </p>
                             </div>
@@ -1150,8 +654,7 @@
                     <h2 class="reveal" style="margin-bottom:28px;">The Big Idea: Find the Best "Viewpoint"</h2>
                     <div class="two-col reveal" style="transition-delay:0.3s;">
                         <div class="col" style="flex:1.2;">
-                            <div class="threejs-container" id="pcaViz1" style="height:520px;"
-                                aria-label="Interactive 3D PCA visualization">
+                            <div class="threejs-container" id="pcaViz1" style="height:520px;" aria-label="Interactive 3D PCA visualization">
                                 <span class="viz-hint">🖱️ Drag to rotate • Auto-rotates</span>
                                 <button class="randomize-btn" id="randomize1">⟳ Randomize</button>
                             </div>
@@ -1161,18 +664,13 @@
                                 Imagine data points floating in 3D space.
                             </p>
                             <ul class="bullet-list">
-                                <li>Data isn't random — it <span class="accent">clusters along certain directions</span>
-                                </li>
-                                <li>PCA finds those directions (the <span class="accent">principal components</span>)
-                                </li>
-                                <li>Then projects data onto them, <span class="accent2">dropping the "boring"
-                                        axes</span></li>
+                                <li>Data isn't random — it <span class="accent">clusters along certain directions</span></li>
+                                <li>PCA finds those directions (the <span class="accent">principal components</span>)</li>
+                                <li>Then projects data onto them, <span class="accent2">dropping the "boring" axes</span></li>
                             </ul>
                             <div class="card card-accent" style="margin-top:20px;padding:20px;">
                                 <p style="font-size:20px;color:var(--text-primary);">
-                                    🎯 <strong>Think of it like this:</strong> Two cameras on a person — front view
-                                    captures way more info than top-of-head view. PCA finds the "front view" of your
-                                    data.
+                                    🎯 <strong>Think of it like this:</strong> Two cameras on a person — front view captures way more info than top-of-head view. PCA finds the "front view" of your data.
                                 </p>
                             </div>
                         </div>
@@ -1189,8 +687,7 @@
                 <div class="slide-content">
                     <div class="topic-tag reveal">Workflow</div>
                     <h2 class="reveal" style="margin-bottom:36px;">PCA Algorithm — 7 Steps</h2>
-                    <div class="reveal"
-                        style="transition-delay:0.3s;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;">
+                    <div class="reveal" style="transition-delay:0.3s;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;">
                         <div class="workflow-step" style="min-width:200px;">
                             <div class="step-icon">📊</div>
                             <h4>Step 1</h4>
@@ -1215,8 +712,7 @@
                             <p>Eigendecomposition</p>
                         </div>
                     </div>
-                    <div class="reveal"
-                        style="transition-delay:0.5s;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:16px;">
+                    <div class="reveal" style="transition-delay:0.5s;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:16px;">
                         <div class="workflow-step" style="min-width:200px;">
                             <div class="step-icon">✂️</div>
                             <h4>Step 5</h4>
@@ -1235,8 +731,7 @@
                             <p>New Low-Dim Data $\mathbf{Z}$</p>
                         </div>
                     </div>
-                    <p class="reveal mono"
-                        style="transition-delay:0.7s;font-size:16px;color:var(--text-dim);text-align:center;margin-top:24px;">
+                    <p class="reveal mono" style="transition-delay:0.7s;font-size:16px;color:var(--text-dim);text-align:center;margin-top:24px;">
                         Let's break down each step with the math...
                     </p>
                 </div>
@@ -1256,12 +751,10 @@
                         <div class="col">
                             <h3 style="font-size:28px;margin-bottom:16px;">Step 1: Mean Vector</h3>
                             <div class="formula-box">
-                                <p style="font-size:22px;">$$\bar{\mathbf{x}} = \frac{1}{N} \sum_{n=1}^{N}
-                                    \mathbf{x}_n$$</p>
+                                <p style="font-size:22px;">$$\bar{\mathbf{x}} = \frac{1}{N} \sum_{n=1}^{N} \mathbf{x}_n$$</p>
                             </div>
                             <p style="font-size:22px;margin-top:16px;">
-                                Just the average of all data points across each dimension. Nothing fancy — literally
-                                <span class="code-highlight">np.mean(X, axis=1)</span>
+                                Just the average of all data points across each dimension. Nothing fancy — literally <span class="code-highlight">np.mean(X, axis=1)</span>
                             </p>
                         </div>
                         <div class="col">
@@ -1274,8 +767,7 @@
                             </p>
                             <div class="card card-accent" style="margin-top:16px;padding:16px;">
                                 <p style="font-size:18px;color:var(--accent);">
-                                    ⚡ <strong>Why?</strong> Makes the math way cleaner. The covariance matrix simplifies
-                                    beautifully when $\bar{\mathbf{x}} = \mathbf{0}$.
+                                    ⚡ <strong>Why?</strong> Makes the math way cleaner. The covariance matrix simplifies beautifully when $\bar{\mathbf{x}} = \mathbf{0}$.
                                 </p>
                             </div>
                         </div>
@@ -1284,8 +776,7 @@
                         <div class="card" style="padding:20px;display:flex;align-items:center;gap:20px;">
                             <span style="font-size:28px;">💻</span>
                             <p class="mono" style="font-size:18px;color:var(--accent);">
-                                X_centered = X - np.mean(X, axis=1, keepdims=True) <span class="dim"># One line.
-                                    Done.</span>
+                                X_centered = X - np.mean(X, axis=1, keepdims=True)  <span class="dim"># One line. Done.</span>
                             </p>
                         </div>
                     </div>
@@ -1305,16 +796,14 @@
                     <div class="two-col reveal" style="transition-delay:0.3s;margin-top:28px;">
                         <div class="col col-wide">
                             <div class="formula-box" style="margin-bottom:24px;">
-                                <p style="font-size:22px;">$$\mathbf{S} = \frac{1}{N} \hat{\mathbf{X}}
-                                    \hat{\mathbf{X}}^T \in \mathbb{R}^{D \times D}$$</p>
+                                <p style="font-size:22px;">$$\mathbf{S} = \frac{1}{N} \hat{\mathbf{X}} \hat{\mathbf{X}}^T \in \mathbb{R}^{D \times D}$$</p>
                             </div>
                             <p style="font-size:24px;margin-bottom:16px;color:var(--text-primary);">
                                 The covariance matrix tells you <span class="accent">how features co-vary</span>:
                             </p>
                             <ul class="bullet-list">
                                 <li><strong>Diagonal entries</strong> $s_{ii}$ → variance of feature $i$ (spread)</li>
-                                <li><strong>Off-diagonal</strong> $s_{ij}$ → covariance between features $i$ and $j$
-                                </li>
+                                <li><strong>Off-diagonal</strong> $s_{ij}$ → covariance between features $i$ and $j$</li>
                                 <li>$s_{ij} > 0$ → features increase together</li>
                                 <li>$s_{ij} = 0$ → features are <span class="accent">uncorrelated</span></li>
                             </ul>
@@ -1358,23 +847,18 @@
                                 </p>
                             </div>
                             <ul class="bullet-list" style="margin-top:20px;">
-                                <li><strong>Eigenvectors</strong> $\mathbf{u}_i$ → the <span class="accent">principal
-                                        directions</span></li>
-                                <li><strong>Eigenvalues</strong> $\lambda_i$ → <span class="accent2">variance
-                                        captured</span> by each direction</li>
+                                <li><strong>Eigenvectors</strong> $\mathbf{u}_i$ → the <span class="accent">principal directions</span></li>
+                                <li><strong>Eigenvalues</strong> $\lambda_i$ → <span class="accent2">variance captured</span> by each direction</li>
                                 <li>Bigger $\lambda$ = more important direction</li>
                             </ul>
                             <div class="card" style="margin-top:16px;padding:16px;">
                                 <p style="font-size:18px;color:var(--text-primary);">
-                                    🧠 <strong>Fun fact:</strong> The eigenvectors form an orthonormal basis — they're
-                                    perpendicular and unit-length. PCA is basically a <span
-                                        class="accent">rotation</span> of your coordinate system.
+                                    🧠 <strong>Fun fact:</strong> The eigenvectors form an orthonormal basis —  they're perpendicular and unit-length. PCA is basically a <span class="accent">rotation</span> of your coordinate system.
                                 </p>
                             </div>
                         </div>
                         <div class="col" style="display:flex;align-items:center;">
-                            <div class="threejs-container" id="pcaViz2" style="height:500px;"
-                                aria-label="Interactive 3D eigenvector visualization">
+                            <div class="threejs-container" id="pcaViz2" style="height:500px;" aria-label="Interactive 3D eigenvector visualization">
                                 <span class="viz-hint">🖱️ Drag to rotate</span>
                                 <button class="randomize-btn" id="randomize2">⟳ Randomize</button>
                             </div>
@@ -1397,8 +881,7 @@
                         <div class="col">
                             <h3 style="font-size:26px;margin-bottom:16px;">Choose K Components</h3>
                             <div class="formula-box">
-                                <p style="font-size:22px;">$$r_K = \frac{\sum_{i=1}^{K} \lambda_i}{\sum_{j=1}^{D}
-                                    \lambda_j} \geq \text{threshold}$$</p>
+                                <p style="font-size:22px;">$$r_K = \frac{\sum_{i=1}^{K} \lambda_i}{\sum_{j=1}^{D} \lambda_j} \geq \text{threshold}$$</p>
                             </div>
                             <p style="font-size:22px;margin-top:16px;">
                                 Pick the smallest $K$ such that $r_K \geq 0.95$ (or 0.99).
@@ -1406,25 +889,21 @@
                             </p>
                             <div class="card card-accent" style="margin-top:16px;padding:16px;">
                                 <p style="font-size:18px;color:var(--accent);">
-                                    📐 Common thresholds: <strong>90%</strong> for speed, <strong>95%</strong> balanced,
-                                    <strong>99%</strong> for accuracy
+                                    📐 Common thresholds: <strong>90%</strong> for speed, <strong>95%</strong> balanced, <strong>99%</strong> for accuracy
                                 </p>
                             </div>
                         </div>
                         <div class="col">
                             <h3 style="font-size:26px;margin-bottom:16px;">Project the Data</h3>
                             <div class="formula-box">
-                                <p style="font-size:22px;">$$\mathbf{Z} = \mathbf{U}_K^T \hat{\mathbf{X}} \in
-                                    \mathbb{R}^{K \times N}$$</p>
+                                <p style="font-size:22px;">$$\mathbf{Z} = \mathbf{U}_K^T \hat{\mathbf{X}} \in \mathbb{R}^{K \times N}$$</p>
                             </div>
                             <p style="font-size:22px;margin-top:16px;">
-                                $\mathbf{U}_K$ is the matrix with the top $K$ eigenvectors as columns. Multiply and
-                                done.
+                                $\mathbf{U}_K$ is the matrix with the top $K$ eigenvectors as columns. Multiply and done.
                             </p>
                             <h3 style="font-size:26px;margin-top:20px;margin-bottom:12px;">Reconstruct (Approx)</h3>
                             <div class="formula-box">
-                                <p style="font-size:22px;">$$\mathbf{x} \approx \mathbf{U}_K \mathbf{z} +
-                                    \bar{\mathbf{x}}$$</p>
+                                <p style="font-size:22px;">$$\mathbf{x} \approx \mathbf{U}_K \mathbf{z} + \bar{\mathbf{x}}$$</p>
                             </div>
                             <p style="font-size:18px;margin-top:8px;color:var(--text-dim);">
                                 You can go back! (With some info loss)
@@ -1447,22 +926,17 @@
                         <div class="col col-wide">
                             <h3 style="font-size:24px;margin-bottom:16px;">Minimize Reconstruction Error</h3>
                             <div class="formula-box">
-                                <p style="font-size:20px;">$$J = \frac{1}{N} ||\mathbf{X} - \tilde{\mathbf{X}}||_F^2 =
-                                    \sum_{i=K+1}^{D} \mathbf{u}_i^T \mathbf{S} \mathbf{u}_i$$</p>
+                                <p style="font-size:20px;">$$J = \frac{1}{N} ||\mathbf{X} - \tilde{\mathbf{X}}||_F^2 = \sum_{i=K+1}^{D} \mathbf{u}_i^T \mathbf{S} \mathbf{u}_i$$</p>
                             </div>
-                            <p style="font-size:22px;margin:16px 0;">Equivalently: <span class="accent">Maximize
-                                    Retained Variance</span></p>
+                            <p style="font-size:22px;margin:16px 0;">Equivalently: <span class="accent">Maximize Retained Variance</span></p>
                             <div class="formula-box">
-                                <p style="font-size:20px;">$$F = \sum_{i=1}^{K} \mathbf{u}_i^T \mathbf{S} \mathbf{u}_i
-                                    \quad \text{s.t.} \quad \mathbf{u}_i^T\mathbf{u}_j = \delta_{ij}$$</p>
+                                <p style="font-size:20px;">$$F = \sum_{i=1}^{K} \mathbf{u}_i^T \mathbf{S} \mathbf{u}_i \quad \text{s.t.} \quad \mathbf{u}_i^T\mathbf{u}_j = \delta_{ij}$$</p>
                             </div>
                             <p style="font-size:22px;margin-top:16px;">
                                 Total variance is <span class="accent">invariant</span> under rotation:
                             </p>
-                            <div class="formula-box"
-                                style="background:rgba(255,0,170,0.05);border-left-color:var(--accent2);">
-                                <p style="font-size:20px;">$$L = \text{trace}(\mathbf{S}) = \sum_{i=1}^{D} \lambda_i =
-                                    \text{const}$$</p>
+                            <div class="formula-box" style="background:rgba(255,0,170,0.05);border-left-color:var(--accent2);">
+                                <p style="font-size:20px;">$$L = \text{trace}(\mathbf{S}) = \sum_{i=1}^{D} \lambda_i = \text{const}$$</p>
                             </div>
                         </div>
                         <div class="col col-narrow">
@@ -1497,51 +971,31 @@
                 <div class="glow-orb purple" style="width:400px;height:400px;bottom:-100px;right:-80px;"></div>
                 <div class="slide-content">
                     <div class="topic-tag reveal">Key Insight</div>
-                    <h2 class="reveal" style="margin-bottom:24px;">PCA = Truncated SVD <span
-                            class="dim">(basically)</span></h2>
+                    <h2 class="reveal" style="margin-bottom:24px;">PCA = Truncated SVD <span class="dim">(basically)</span></h2>
                     <div class="two-col reveal" style="transition-delay:0.3s;">
                         <div class="col">
                             <h3 style="font-size:24px;margin-bottom:16px;">SVD of Centered Data</h3>
                             <div class="formula-box">
-                                <p style="font-size:22px;">$$\hat{\mathbf{X}} = \mathbf{U} \mathbf{\Sigma}
-                                    \mathbf{V}^T$$</p>
+                                <p style="font-size:22px;">$$\hat{\mathbf{X}} = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^T$$</p>
                             </div>
                             <p style="font-size:22px;margin:16px 0;">Truncated to rank $K$:</p>
                             <div class="formula-box">
-                                <p style="font-size:22px;">$$\hat{\mathbf{X}} \approx \mathbf{U}_K \mathbf{\Sigma}_K
-                                    \mathbf{V}_K^T$$</p>
+                                <p style="font-size:22px;">$$\hat{\mathbf{X}} \approx \mathbf{U}_K \mathbf{\Sigma}_K \mathbf{V}_K^T$$</p>
                             </div>
                             <div class="card card-accent" style="margin-top:16px;padding:16px;">
                                 <p style="font-size:18px;color:var(--text-primary);">
-                                    <strong>Why this matters:</strong> In practice, just use <span
-                                        class="code-highlight">np.linalg.svd()</span> instead of computing the
-                                    covariance matrix eigendecomposition. It's numerically more stable!
+                                    <strong>Why this matters:</strong> In practice, just use <span class="code-highlight">np.linalg.svd()</span> instead of computing the covariance matrix eigendecomposition. It's numerically more stable!
                                 </p>
                             </div>
                         </div>
                         <div class="col">
                             <h3 style="font-size:24px;margin-bottom:16px;">The Connection</h3>
                             <table class="compare-table">
-                                <tr>
-                                    <th>PCA</th>
-                                    <th>SVD</th>
-                                </tr>
-                                <tr>
-                                    <td>$\mathbf{U}_K$</td>
-                                    <td>Left singular vectors (first K)</td>
-                                </tr>
-                                <tr>
-                                    <td>$\mathbf{Z}$</td>
-                                    <td>$\mathbf{\Sigma}_K \mathbf{V}_K^T$</td>
-                                </tr>
-                                <tr>
-                                    <td>$\lambda_i$</td>
-                                    <td>$\sigma_i^2 / N$</td>
-                                </tr>
-                                <tr>
-                                    <td>Eigenvecs of $\mathbf{S}$</td>
-                                    <td>Left SVD vecs of $\hat{\mathbf{X}}$</td>
-                                </tr>
+                                <tr><th>PCA</th><th>SVD</th></tr>
+                                <tr><td>$\mathbf{U}_K$</td><td>Left singular vectors (first K)</td></tr>
+                                <tr><td>$\mathbf{Z}$</td><td>$\mathbf{\Sigma}_K \mathbf{V}_K^T$</td></tr>
+                                <tr><td>$\lambda_i$</td><td>$\sigma_i^2 / N$</td></tr>
+                                <tr><td>Eigenvecs of $\mathbf{S}$</td><td>Left SVD vecs of $\hat{\mathbf{X}}$</td></tr>
                             </table>
                             <div class="card" style="margin-top:16px;padding:16px;">
                                 <p class="mono" style="font-size:16px;color:var(--accent);">
@@ -1568,8 +1022,7 @@
                     <div class="two-col reveal" style="transition-delay:0.3s;">
                         <div class="col col-wide">
                             <p style="font-size:24px;margin-bottom:20px;color:var(--text-primary);">
-                                Each 116×98 face image = <span class="code-highlight">11,368-dim vector</span>. PCA
-                                compresses them to ~100 dims.
+                                Each 116×98 face image = <span class="code-highlight">11,368-dim vector</span>. PCA compresses them to ~100 dims.
                             </p>
                             <div class="card" style="padding:20px;">
                                 <p class="mono" style="font-size:16px;color:var(--accent);line-height:1.8;">
@@ -1578,7 +1031,7 @@
                                     from sklearn.decomposition import PCA<br><br>
                                     <span class="dim"># X shape: (11368, 165) — each column is a face</span><br>
                                     pca = PCA(n_components=100)<br>
-                                    Z = pca.fit_transform(X.T) <span class="dim"># (165, 100)</span><br><br>
+                                    Z = pca.fit_transform(X.T)  <span class="dim"># (165, 100)</span><br><br>
                                     <span class="dim"># Reconstruct</span><br>
                                     X_approx = pca.inverse_transform(Z).T<br>
                                     print(f"Variance kept: {pca.explained_variance_ratio_.sum():.1%}")
@@ -1620,14 +1073,12 @@
                     <div class="two-col reveal" style="transition-delay:0.3s;">
                         <div class="col col-wide">
                             <p style="font-size:24px;margin-bottom:20px;color:var(--text-primary);">
-                                <span class="accent">Key idea:</span> Normal data lives near the PCA subspace. Outliers
-                                don't.
+                                <span class="accent">Key idea:</span> Normal data lives near the PCA subspace. Outliers don't.
                             </p>
                             <div class="formula-box" style="margin-bottom:20px;">
                                 <p style="font-size:20px;">
                                     Reconstruction error as anomaly score:<br>
-                                    $$\text{score}(\mathbf{x}) = ||\mathbf{x} - \mathbf{U}_K \mathbf{U}_K^T
-                                    \mathbf{x}||_2^2$$
+                                    $$\text{score}(\mathbf{x}) = ||\mathbf{x} - \mathbf{U}_K \mathbf{U}_K^T \mathbf{x}||_2^2$$
                                 </p>
                             </div>
                             <div class="card" style="padding:20px;">
@@ -1656,8 +1107,7 @@
                             </div>
                             <div class="card" style="margin-top:16px;padding:16px;">
                                 <p style="font-size:18px;color:var(--text-primary);">
-                                    ⚡ <strong>Pro tip:</strong> This is <em>unsupervised</em> — no labels needed! Just
-                                    train on "normal" data.
+                                    ⚡ <strong>Pro tip:</strong> This is <em>unsupervised</em> — no labels needed! Just train on "normal" data.
                                 </p>
                             </div>
                         </div>
@@ -1677,22 +1127,16 @@
                     <div class="two-col reveal" style="transition-delay:0.3s;">
                         <div class="col">
                             <p style="font-size:24px;margin-bottom:20px;color:var(--text-primary);">
-                                <span class="accent">Problem:</span> With $D = 10^6$ and $N = 10^6$, computing the full
-                                covariance matrix is impossible.
+                                <span class="accent">Problem:</span> With $D = 10^6$ and $N = 10^6$, computing the full covariance matrix is impossible.
                             </p>
                             <div class="card" style="padding:24px;margin-bottom:16px;">
                                 <h3 style="font-size:22px;margin-bottom:12px;">Power Iteration</h3>
                                 <ol style="padding-left:20px;">
-                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Start with
-                                        random unit vector $\mathbf{q}^{(0)}$</li>
-                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Compute
-                                        $\mathbf{z} = \mathbf{A}\mathbf{q}^{(k-1)}$</li>
-                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Normalize:
-                                        $\mathbf{q}^{(k)} = \mathbf{z} / ||\mathbf{z}||_2$</li>
-                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Repeat
-                                        until convergence</li>
-                                    <li style="font-size:20px;color:var(--accent);">$\mathbf{q}^{(k)}$ ≈ top
-                                        eigenvector! 🎉</li>
+                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Start with random unit vector $\mathbf{q}^{(0)}$</li>
+                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Compute $\mathbf{z} = \mathbf{A}\mathbf{q}^{(k-1)}$</li>
+                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Normalize: $\mathbf{q}^{(k)} = \mathbf{z} / ||\mathbf{z}||_2$</li>
+                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Repeat until convergence</li>
+                                    <li style="font-size:20px;color:var(--accent);">$\mathbf{q}^{(k)}$ ≈ top eigenvector! 🎉</li>
                                 </ol>
                             </div>
                             <p style="font-size:20px;color:var(--text-dim);">
@@ -1702,14 +1146,11 @@
                         <div class="col">
                             <div class="card card-accent" style="padding:24px;margin-bottom:16px;">
                                 <h3 style="font-size:22px;margin-bottom:12px;">Finding More Eigenvectors</h3>
-                                <div class="formula-box"
-                                    style="background:transparent;border-left-color:var(--accent2);padding:16px;">
-                                    <p style="font-size:18px;">$$\mathbf{B} = \mathbf{A} - \lambda_1 \mathbf{v}_1
-                                        \mathbf{v}_1^T$$</p>
+                                <div class="formula-box" style="background:transparent;border-left-color:var(--accent2);padding:16px;">
+                                    <p style="font-size:18px;">$$\mathbf{B} = \mathbf{A} - \lambda_1 \mathbf{v}_1 \mathbf{v}_1^T$$</p>
                                 </div>
                                 <p style="font-size:18px;margin-top:12px;">
-                                    Deflate the matrix by removing the first eigenvector's contribution. Run Power
-                                    Method again for $\lambda_2$. Repeat for K components.
+                                    Deflate the matrix by removing the first eigenvector's contribution. Run Power Method again for $\lambda_2$. Repeat for K components.
                                 </p>
                             </div>
                             <div class="card" style="padding:20px;">
@@ -1719,9 +1160,7 @@
                                     use $\mathbf{X}^T\mathbf{X} \in \mathbb{R}^{N \times N}$ (much smaller!)
                                 </p>
                                 <div class="formula-box" style="padding:12px;">
-                                    <p style="font-size:16px;">If $\mathbf{X}^T\mathbf{X}\mathbf{u} =
-                                        \lambda\mathbf{u}$, then $(\mathbf{X}\mathbf{X}^T)(\mathbf{X}\mathbf{u}) =
-                                        \lambda(\mathbf{X}\mathbf{u})$</p>
+                                    <p style="font-size:16px;">If $\mathbf{X}^T\mathbf{X}\mathbf{u} = \lambda\mathbf{u}$, then $(\mathbf{X}\mathbf{X}^T)(\mathbf{X}\mathbf{u}) = \lambda(\mathbf{X}\mathbf{u})$</p>
                                 </div>
                             </div>
                         </div>
@@ -1770,17 +1209,12 @@
                     <div class="two-col reveal" style="transition-delay:0.3s;">
                         <div class="col">
                             <p style="font-size:24px;margin-bottom:16px;color:var(--text-primary);">
-                                Multivariate time series — <span class="accent">revenue forecasting, e-commerce ops,
-                                    OHLCV stock data</span> — are full of <span class="accent2">correlated, redundant
-                                    features</span>.
+                                Multivariate time series — <span class="accent">revenue forecasting, e-commerce ops, OHLCV stock data</span> — are full of <span class="accent2">correlated, redundant features</span>.
                             </p>
                             <ul class="bullet-list">
-                                <li>📈 <strong>Multicollinearity</strong> — open/high/low/close move together; revenue
-                                    channels overlap</li>
-                                <li>🐌 <strong>Attention cost scales with variates</strong> — iTransformer attends
-                                    across variate tokens, so more redundant variates means more wasted computation</li>
-                                <li>🧩 <strong>Black-box risk</strong> — feeding raw correlated features into a heavy
-                                    Transformer makes it harder to reason about what drives the prediction</li>
+                                <li>📈 <strong>Multicollinearity</strong> — open/high/low/close move together; revenue channels overlap</li>
+                                <li>🐌 <strong>Attention cost scales with variates</strong> — iTransformer attends across variate tokens, so more redundant variates means more wasted computation</li>
+                                <li>🧩 <strong>Black-box risk</strong> — feeding raw correlated features into a heavy Transformer makes it harder to reason about what drives the prediction</li>
                             </ul>
                         </div>
                         <div class="col" style="display:flex;align-items:center;">
@@ -1798,8 +1232,7 @@
                                     <p>Redundant signal, larger attention matrix</p>
                                 </div>
                                 <p style="text-align:center;color:var(--accent2);font-size:22px;margin:4px 0;">↓</p>
-                                <p style="text-align:center;font-size:18px;color:var(--text-dim);">Slower, noisier,
-                                    harder to interpret</p>
+                                <p style="text-align:center;font-size:18px;color:var(--text-dim);">Slower, noisier, harder to interpret</p>
                             </div>
                         </div>
                     </div>
@@ -1815,8 +1248,7 @@
                 <div class="slide-content">
                     <div class="topic-tag reveal">Pipeline</div>
                     <h2 class="reveal" style="margin-bottom:32px;">PCA as a Pre-Processing Layer</h2>
-                    <div class="reveal"
-                        style="transition-delay:0.3s;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;">
+                    <div class="reveal" style="transition-delay:0.3s;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;">
                         <div class="workflow-step" style="min-width:190px;">
                             <div class="step-icon">📥</div>
                             <h4>Raw Series</h4>
@@ -1841,8 +1273,7 @@
                             <p>Orthogonal, compact, decorrelated</p>
                         </div>
                     </div>
-                    <div class="reveal"
-                        style="transition-delay:0.5s;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:16px;">
+                    <div class="reveal" style="transition-delay:0.5s;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:16px;">
                         <div class="workflow-step" style="min-width:190px;border-color:rgba(0,255,204,0.35);">
                             <div class="step-icon">🤖</div>
                             <h4>iTransformer / TranAD</h4>
@@ -1855,12 +1286,9 @@
                             <p>Revenue forecast or anomaly flag</p>
                         </div>
                     </div>
-                    <div class="card card-accent reveal"
-                        style="transition-delay:0.7s;margin-top:28px;padding:18px 24px;">
+                    <div class="card card-accent reveal" style="transition-delay:0.7s;margin-top:28px;padding:18px 24px;">
                         <p style="font-size:19px;color:var(--text-primary);">
-                            💡 <strong>Why it helps:</strong> orthogonal inputs mean each variate token carries
-                            non-redundant information, so the attention block spends its capacity on genuinely
-                            independent signals instead of re-deriving correlations the data already had.
+                            💡 <strong>Why it helps:</strong> orthogonal inputs mean each variate token carries non-redundant information, so the attention block spends its capacity on genuinely independent signals instead of re-deriving correlations the data already had.
                         </p>
                     </div>
                 </div>
@@ -1878,14 +1306,11 @@
                     <div class="two-col reveal" style="transition-delay:0.3s;">
                         <div class="col">
                             <p style="font-size:22px;margin-bottom:16px;color:var(--text-primary);">
-                                The contribution isn't a new PCA formula — it's knowing <span class="accent">where a
-                                    125-year-old linear method still beats a 2024 attention block</span> at its own job:
-                                removing redundancy before the heavy model ever sees the data.
+                                The contribution isn't a new PCA formula — it's knowing <span class="accent">where a 125-year-old linear method still beats a 2024 attention block</span> at its own job: removing redundancy before the heavy model ever sees the data.
                             </p>
                             <div class="card" style="padding:16px;">
                                 <p style="font-size:18px;color:var(--text-primary);">
-                                    🧪 Classic preprocessing + modern architecture = an interpretable front-end bolted
-                                    onto a powerful, non-linear back-end. Deep Learning stops being a pure black box.
+                                    🧪 Classic preprocessing + modern architecture = an interpretable front-end bolted onto a powerful, non-linear back-end. Deep Learning stops being a pure black box.
                                 </p>
                             </div>
                         </div>
@@ -1893,20 +1318,17 @@
                             <div class="card card-accent" style="padding:18px;">
                                 <p style="font-size:30px;margin-bottom:6px;">💰</p>
                                 <h3 style="font-size:20px;margin-bottom:6px;">Revenue Forecasting</h3>
-                                <p style="font-size:16px;">Decorrelate e-commerce demand drivers before iTransformer
-                                    forecasts weekly/state-level revenue</p>
+                                <p style="font-size:16px;">Decorrelate e-commerce demand drivers before iTransformer forecasts weekly/state-level revenue</p>
                             </div>
                             <div class="card card-accent" style="padding:18px;">
                                 <p style="font-size:30px;margin-bottom:6px;">📦</p>
                                 <h3 style="font-size:20px;margin-bottom:6px;">E-commerce Ops</h3>
-                                <p style="font-size:16px;">Compress overlapping operational signals (orders, logistics,
-                                    traffic) into clean variate tokens</p>
+                                <p style="font-size:16px;">Compress overlapping operational signals (orders, logistics, traffic) into clean variate tokens</p>
                             </div>
                             <div class="card card-accent" style="padding:18px;">
                                 <p style="font-size:30px;margin-bottom:6px;">📉</p>
                                 <h3 style="font-size:20px;margin-bottom:6px;">OHLCV Anomaly Detection</h3>
-                                <p style="font-size:16px;">Orthogonalized price/volume features feed TranAD for cleaner
-                                    anomaly scores</p>
+                                <p style="font-size:16px;">Orthogonalized price/volume features feed TranAD for cleaner anomaly scores</p>
                             </div>
                         </div>
                     </div>
@@ -1920,27 +1342,20 @@
             <section class="slide" id="slide-18">
                 <div class="glow-orb cyan" style="width:350px;height:350px;top:100px;left:-80px;"></div>
                 <div class="slide-content">
-                    <div class="sota-badge reveal" style="border-color:rgba(0,255,204,0.3);color:var(--accent);">🔐 SOTA
-                        Connection #2</div>
+                    <div class="sota-badge reveal" style="border-color:rgba(0,255,204,0.3);color:var(--accent);">🔐 SOTA Connection #2</div>
                     <h2 class="reveal" style="margin-bottom:20px;">Federated PCA — Privacy-Preserving ML</h2>
                     <div class="two-col reveal" style="transition-delay:0.3s;">
                         <div class="col">
                             <p style="font-size:24px;margin-bottom:20px;color:var(--text-primary);">
-                                <span class="accent">The problem:</span> you need PCA across data from multiple
-                                hospitals/banks, but <span class="accent2">can't share raw data</span>.
+                                <span class="accent">The problem:</span> you need PCA across data from multiple hospitals/banks, but <span class="accent2">can't share raw data</span>.
                             </p>
                             <div class="card" style="padding:20px;margin-bottom:16px;">
                                 <h3 style="font-size:22px;margin-bottom:12px;">How Federated PCA Works</h3>
                                 <ol style="padding-left:20px;">
-                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Each node
-                                        computes <strong>local covariance</strong> $\mathbf{S}_i$</li>
-                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Nodes send
-                                        $\mathbf{S}_i$ (not raw data!) to the server</li>
-                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Covariance
-                                        is additive: $\mathbf{S}_{global} = \mathbf{S}_A + \mathbf{S}_B + \mathbf{S}_C$
-                                    </li>
-                                    <li style="font-size:20px;color:var(--accent);">Server eigendecomposes
-                                        $\mathbf{S}_{global}$ → distributes the eigenvectors</li>
+                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Each node computes <strong>local covariance</strong> $\mathbf{S}_i$</li>
+                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Nodes send $\mathbf{S}_i$ (not raw data!) to the server</li>
+                                    <li style="font-size:20px;color:var(--text-secondary);margin-bottom:8px;">Covariance is additive: $\mathbf{S}_{global} = \mathbf{S}_A + \mathbf{S}_B + \mathbf{S}_C$</li>
+                                    <li style="font-size:20px;color:var(--accent);">Server eigendecomposes $\mathbf{S}_{global}$ → distributes the eigenvectors</li>
                                 </ol>
                             </div>
                             <p style="font-size:18px;color:var(--text-dim);">
@@ -1980,31 +1395,24 @@
                 <div class="slide-content">
                     <div class="topic-tag reveal">Industry Impact</div>
                     <h2 class="reveal" style="margin-bottom:20px;">From Local Tool to Distributed Protocol</h2>
-                    <p class="reveal"
-                        style="transition-delay:0.2s;font-size:20px;color:var(--text-secondary);margin-bottom:24px;">
-                        Additive covariance turns PCA into a <span class="accent">distributed learning protocol</span> —
-                        organizations collaborate without ever pooling raw data, which is exactly what GDPR, HIPAA, and
-                        CCPA require.
+                    <p class="reveal" style="transition-delay:0.2s;font-size:20px;color:var(--text-secondary);margin-bottom:24px;">
+                        Additive covariance turns PCA into a <span class="accent">distributed learning protocol</span> — organizations collaborate without ever pooling raw data, which is exactly what GDPR, HIPAA, and CCPA require.
                     </p>
-                    <div class="reveal"
-                        style="transition-delay:0.3s;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;">
+                    <div class="reveal" style="transition-delay:0.3s;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;">
                         <div class="card card-accent" style="padding:24px;">
                             <p style="font-size:36px;margin-bottom:10px;">🏥</p>
                             <h3 style="font-size:22px;margin-bottom:10px;">Healthcare</h3>
-                            <p style="font-size:17px;">Multi-hospital genomic studies. PCA on patient data without
-                                violating HIPAA.</p>
+                            <p style="font-size:17px;">Multi-hospital genomic studies. PCA on patient data without violating HIPAA.</p>
                         </div>
                         <div class="card card-accent" style="padding:24px;">
                             <p style="font-size:36px;margin-bottom:10px;">🏦</p>
                             <h3 style="font-size:22px;margin-bottom:10px;">Banking & Finance</h3>
-                            <p style="font-size:17px;">Cross-bank fraud detection on transaction data without exposing
-                                customer records.</p>
+                            <p style="font-size:17px;">Cross-bank fraud detection on transaction data without exposing customer records.</p>
                         </div>
                         <div class="card card-accent" style="padding:24px;">
                             <p style="font-size:36px;margin-bottom:10px;">📱</p>
                             <h3 style="font-size:22px;margin-bottom:10px;">Edge Computing</h3>
-                            <p style="font-size:17px;">IoT devices share only covariance statistics, not raw sensor
-                                streams — far less bandwidth.</p>
+                            <p style="font-size:17px;">IoT devices share only covariance statistics, not raw sensor streams — far less bandwidth.</p>
                         </div>
                     </div>
                 </div>
@@ -2022,8 +1430,7 @@
                     <h1 class="reveal" style="font-size:72px;margin-bottom:32px;">
                         TL;DR<span class="accent">.</span>
                     </h1>
-                    <div class="reveal"
-                        style="transition-delay:0.3s;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:1600px;">
+                    <div class="reveal" style="transition-delay:0.3s;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:1600px;">
                         <div class="card card-accent" style="padding:28px;text-align:center;">
                             <p style="font-size:36px;margin-bottom:12px;">📐</p>
                             <h3 style="font-size:20px;margin-bottom:8px;">The Math</h3>
@@ -2032,28 +1439,24 @@
                         <div class="card card-accent" style="padding:28px;text-align:center;">
                             <p style="font-size:36px;margin-bottom:12px;">⚡</p>
                             <h3 style="font-size:20px;margin-bottom:8px;">The Power</h3>
-                            <p style="font-size:16px;">Linear, fast, well-understood, and still relevant 125 years later
-                            </p>
+                            <p style="font-size:16px;">Linear, fast, well-understood, and still relevant 125 years later</p>
                         </div>
                         <div class="card card-accent" style="padding:28px;text-align:center;">
                             <p style="font-size:36px;margin-bottom:12px;">🤖</p>
                             <h3 style="font-size:20px;margin-bottom:8px;">+ Transformer</h3>
-                            <p style="font-size:16px;">PCA decorrelates the input so iTransformer/TranAD attend to clean
-                                signal</p>
+                            <p style="font-size:16px;">PCA decorrelates the input so iTransformer/TranAD attend to clean signal</p>
                         </div>
                         <div class="card card-accent" style="padding:28px;text-align:center;">
                             <p style="font-size:36px;margin-bottom:12px;">🔐</p>
                             <h3 style="font-size:20px;margin-bottom:8px;">Federated</h3>
-                            <p style="font-size:16px;">Additive covariance → privacy-first PCA without sharing raw data
-                            </p>
+                            <p style="font-size:16px;">Additive covariance → privacy-first PCA without sharing raw data</p>
                         </div>
                     </div>
                     <div class="reveal" style="transition-delay:0.5s;margin-top:40px;">
                         <p class="mono" style="font-size:18px;color:var(--text-dim);">
                             References: machinelearningcoban.com • Bishop (2006) • Liu et al., iTransformer (2024)
                         </p>
-                        <p class="reveal mono cursor-blink"
-                            style="transition-delay:0.7s;font-size:20px;color:var(--accent);margin-top:16px;">
+                        <p class="reveal mono cursor-blink" style="transition-delay:0.7s;font-size:20px;color:var(--accent);margin-top:16px;">
                             Questions? Let's discuss
                         </p>
                     </div>
@@ -2111,7 +1514,7 @@
             setupKeyboardNav() {
                 document.addEventListener('keydown', (e) => {
                     if (e.target.getAttribute('contenteditable')) return;
-                    switch (e.key) {
+                    switch(e.key) {
                         case 'ArrowRight': case 'ArrowDown': case ' ': case 'PageDown':
                             e.preventDefault(); this.next(); break;
                         case 'ArrowLeft': case 'ArrowUp': case 'PageUp':
@@ -2181,7 +1584,7 @@
 
                 // Retypeset MathJax if available
                 if (window.MathJax && window.MathJax.typesetPromise) {
-                    window.MathJax.typesetPromise([this.slides[this.currentSlide]]).catch(() => { });
+                    window.MathJax.typesetPromise([this.slides[this.currentSlide]]).catch(() => {});
                 }
 
                 // Initialize Three.js visualizations when their slide becomes active
@@ -2220,10 +1623,10 @@
             /* --- Axis grid helper --- */
             const axisLen = 10;
             const axisColors = [0x334155, 0x334155, 0x334155];
-            [[1, 0, 0], [0, 1, 0], [0, 0, 1]].forEach((dir, i) => {
+            [[1,0,0],[0,1,0],[0,0,1]].forEach((dir, i) => {
                 const pts = [
-                    new THREE.Vector3(-dir[0] * axisLen, -dir[1] * axisLen, -dir[2] * axisLen),
-                    new THREE.Vector3(dir[0] * axisLen, dir[1] * axisLen, dir[2] * axisLen)
+                    new THREE.Vector3(-dir[0]*axisLen, -dir[1]*axisLen, -dir[2]*axisLen),
+                    new THREE.Vector3(dir[0]*axisLen, dir[1]*axisLen, dir[2]*axisLen)
                 ];
                 const geo = new THREE.BufferGeometry().setFromPoints(pts);
                 const mat = new THREE.LineBasicMaterial({ color: axisColors[i], transparent: true, opacity: 0.3 });
@@ -2252,9 +1655,9 @@
                     let lam = 0;
                     for (let it = 0; it < 20; it++) {
                         const next = [
-                            W[0][0] * v[0] + W[0][1] * v[1] + W[0][2] * v[2],
-                            W[1][0] * v[0] + W[1][1] * v[1] + W[1][2] * v[2],
-                            W[2][0] * v[0] + W[2][1] * v[1] + W[2][2] * v[2]
+                            W[0][0]*v[0] + W[0][1]*v[1] + W[0][2]*v[2],
+                            W[1][0]*v[0] + W[1][1]*v[1] + W[1][2]*v[2],
+                            W[2][0]*v[0] + W[2][1]*v[1] + W[2][2]*v[2]
                         ];
                         lam = Math.hypot(next[0], next[1], next[2]);
                         v = next.map(x => x / (lam || 1));
@@ -2270,8 +1673,8 @@
             const renderPC = (vec, color, eigenvalue) => {
                 const len = Math.sqrt(Math.max(eigenvalue, 0)) * 1.5 + 2.5;
                 const pts = [
-                    new THREE.Vector3(-vec[0] * len, -vec[1] * len, -vec[2] * len),
-                    new THREE.Vector3(vec[0] * len, vec[1] * len, vec[2] * len)
+                    new THREE.Vector3(-vec[0]*len, -vec[1]*len, -vec[2]*len),
+                    new THREE.Vector3(vec[0]*len, vec[1]*len, vec[2]*len)
                 ];
                 const geo = new THREE.BufferGeometry().setFromPoints(pts);
                 const mat = new THREE.LineBasicMaterial({ color, linewidth: 2 });
@@ -2284,7 +1687,7 @@
                     new THREE.ConeGeometry(0.2, 0.6, 8),
                     new THREE.MeshBasicMaterial({ color })
                 );
-                cone.position.set(vec[0] * len, vec[1] * len, vec[2] * len);
+                cone.position.set(vec[0]*len, vec[1]*len, vec[2]*len);
                 cone.lookAt(0, 0, 0);
                 cone.rotateX(Math.PI);
                 scene.add(cone);
@@ -2295,11 +1698,11 @@
                 const mean = [0, 0, 0];
                 data.forEach(p => { mean[0] += p[0]; mean[1] += p[1]; mean[2] += p[2]; });
                 mean.forEach((v, i) => { mean[i] = v / data.length; });
-                const centered = data.map(p => [p[0] - mean[0], p[1] - mean[1], p[2] - mean[2]]);
-                const cov = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+                const centered = data.map(p => [p[0]-mean[0], p[1]-mean[1], p[2]-mean[2]]);
+                const cov = [[0,0,0],[0,0,0],[0,0,0]];
                 for (let r = 0; r < 3; r++)
                     for (let c = 0; c < 3; c++)
-                        cov[r][c] = centered.reduce((s, p) => s + p[r] * p[c], 0) / (data.length - 1);
+                        cov[r][c] = centered.reduce((s, p) => s + p[r]*p[c], 0) / (data.length - 1);
                 const pcs = topPCs(cov);
                 renderPC(pcs[0].vector, 0xef4444, pcs[0].value); // PC1 red
                 renderPC(pcs[1].vector, 0x22c55e, pcs[1].value); // PC2 green
@@ -2322,23 +1725,23 @@
                     const angle = Math.random() * Math.PI * 6;
                     const radius = Math.random() * 8;
                     const spread = (8 - radius) / 8;
-                    let x = Math.cos(angle) * radius + (Math.random() - 0.5) * 1.5 * spread;
-                    let z = Math.sin(angle) * radius + (Math.random() - 0.5) * 1.5 * spread;
-                    let y = (Math.random() - 0.5) * 0.8 * spread;
+                    let x = Math.cos(angle) * radius + (Math.random()-0.5)*1.5*spread;
+                    let z = Math.sin(angle) * radius + (Math.random()-0.5)*1.5*spread;
+                    let y = (Math.random()-0.5) * 0.8 * spread;
                     // Apply random rotation
-                    const y1 = y * Math.cos(rotX) - z * Math.sin(rotX);
-                    const z1 = y * Math.sin(rotX) + z * Math.cos(rotX);
-                    const fX = x * Math.cos(rotZ) - y1 * Math.sin(rotZ);
-                    const fY = x * Math.sin(rotZ) + y1 * Math.cos(rotZ);
+                    const y1 = y*Math.cos(rotX) - z*Math.sin(rotX);
+                    const z1 = y*Math.sin(rotX) + z*Math.cos(rotX);
+                    const fX = x*Math.cos(rotZ) - y1*Math.sin(rotZ);
+                    const fY = x*Math.sin(rotZ) + y1*Math.cos(rotZ);
                     const fZ = z1;
-                    positions[i * 3] = fX;
-                    positions[i * 3 + 1] = fY;
-                    positions[i * 3 + 2] = fZ;
+                    positions[i*3] = fX;
+                    positions[i*3+1] = fY;
+                    positions[i*3+2] = fZ;
                     // Color gradient: cyan → magenta based on radius
                     const t = radius / 8;
-                    colors[i * 3] = 0.0 + t * 1.0;    // R
-                    colors[i * 3 + 1] = 1.0 - t * 0.6;    // G
-                    colors[i * 3 + 2] = 0.8 + t * 0.15;   // B
+                    colors[i*3]   = 0.0 + t * 1.0;    // R
+                    colors[i*3+1] = 1.0 - t * 0.6;    // G
+                    colors[i*3+2] = 0.8 + t * 0.15;   // B
                     raw.push([fX, fY, fZ]);
                 }
 
@@ -2451,5 +1854,4 @@
         const editor = new InlineEditor();
     </script>
 </body>
-
 </html>
